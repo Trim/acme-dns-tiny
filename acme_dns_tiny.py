@@ -53,8 +53,20 @@ def get_crt(config, log=LOGGER):
         except IOError as e:
             return getattr(e, "code", None), getattr(e, "read", e.__str__)(), None
 
-    # create DNS keyring
+    # create DNS keyring and resolver
     keyring = dns.tsigkeyring.from_text({ config["TSIGKeyring"]["KeyName"] : config["TSIGKeyring"]["KeyValue"]})
+    try:
+        nameserver = [ipv4_rrset.to_text() for ipv4_rrset in dns.resolver.query(config["DNS"]["Host"], rdtype="A")]
+    finally:
+        try:
+            nameserver = nameserver + [ipv6_rrset.to_text() for ipv6_rrset in dns.resolver.query(config["DNS"]["Host"], rdtype="AAAA")]
+        finally:
+            if not nameserver:
+                nameserver = config["DNS"]["Host"]
+        
+    resolver = dns.resolver.Resolver(configure=False)
+    resolver.names = [nameserver]
+    log.info("DNS checks will user servers: {0}".format(resolver.names))
 
     # parse account key to get public key
     log.info("Parsing account key...")
@@ -129,6 +141,28 @@ def get_crt(config, log=LOGGER):
 
         # notify challenge are met
         time.sleep(config["acmednstiny"].getint("CheckChallengeDelay"))
+        log.info("Self challenge check")
+        challenge_verified = False
+        number_check_fail = 0
+        while challenge_verified is False:
+            try:
+                log.info("check retry {0}, with nameservers: {1}".format(number_check_fail, resolver.nameservers))
+                resolver.names = [nameserver]
+                challenges = resolver.query(qname = dnsrr_domain, rdtype="TXT")
+                for response in challenges.rrset:
+                    log.info("looking for {0}, found {1}, equals ? {2}".format(keydigest64, response.to_text(), response.to_text() == '"{0}"'.format(keydigest64)))
+                    challenge_verified = challenge_verified or response.to_text() == '"{0}"'.format(keydigest64)
+                time.sleep(2)
+                if challenge_verified is False:
+                    number_check_fail = number_check_fail + 1
+                
+                if number_check_fail > 10:
+                    raise ValueError("Error checking challenge, value not found: {0} {1}".format(
+                    e.code, e.msg))
+            except dns.exception.DNSException as e:
+                log.info("Info: retry, because a DNS error occurred while checking challenge: {0} {1}".format(e.code, e.msg))
+        
+        log.info("Ask ACME server to perform check...")
         code, result, headers = _send_signed_request(challenge["uri"], {
             "resource": "challenge",
             "keyAuthorization": keyauthorization,
