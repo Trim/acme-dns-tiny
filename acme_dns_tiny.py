@@ -13,7 +13,7 @@ def get_crt(config, log=LOGGER):
     # helper function base64 encode for jose spec
     def _b64(b):
         return base64.urlsafe_b64encode(b).decode("utf8").replace("=", "")
-    
+
     # helper function to run openssl command
     def _openssl(command, options, communicate=None):
         openssl = subprocess.Popen(["openssl", command] + options,
@@ -22,7 +22,7 @@ def get_crt(config, log=LOGGER):
         if openssl.returncode != 0:
             raise IOError("OpenSSL Error: {0}".format(err))
         return out
-    
+
     # helper function to send DNS dynamic update messages
     def _update_dns(rrset, action):
         algorithm = dns.name.from_text("hmac-{0}".format(config["TSIGKeyring"]["Algorithm"].lower()))
@@ -31,7 +31,7 @@ def get_crt(config, log=LOGGER):
             dns_update.add(rrset.name, rrset)
         elif action == "delete":
             dns_update.delete(rrset.name, rrset)
-        resp = dns.query.tcp(dns_update, config["DNS"]["Host"], port=config.getint("DNS","Port"))
+        resp = dns.query.tcp(dns_update, config["DNS"]["Host"], port=config.getint("DNS", "Port"))
         dns_update = None
         return resp
 
@@ -54,7 +54,7 @@ def get_crt(config, log=LOGGER):
             return getattr(e, "code", None), getattr(e, "read", e.__str__)(), None
 
     # create DNS keyring and resolver
-    keyring = dns.tsigkeyring.from_text({ config["TSIGKeyring"]["KeyName"] : config["TSIGKeyring"]["KeyValue"]})
+    keyring = dns.tsigkeyring.from_text({config["TSIGKeyring"]["KeyName"]: config["TSIGKeyring"]["KeyValue"]})
     try:
         nameserver = [ipv4_rrset.to_text() for ipv4_rrset in dns.resolver.query(config["DNS"]["Host"], rdtype="A")]
     finally:
@@ -63,7 +63,7 @@ def get_crt(config, log=LOGGER):
         finally:
             if not nameserver:
                 nameserver = config["DNS"]["Host"]
-        
+
     resolver = dns.resolver.Resolver(configure=False)
     resolver.names = [nameserver]
     log.info("DNS checks will user servers: {0}".format(resolver.names))
@@ -73,7 +73,7 @@ def get_crt(config, log=LOGGER):
     accountkey = _openssl("rsa", ["-in", config["acmednstiny"]["AccountKeyFile"], "-noout", "-text"])
     pub_hex, pub_exp = re.search(
         r"modulus:\n\s+00:([a-f0-9\:\s]+?)\npublicExponent: ([0-9]+)",
-        accountkey.decode("utf8"), re.MULTILINE|re.DOTALL).groups()
+        accountkey.decode("utf8"), re.MULTILINE | re.DOTALL).groups()
     pub_exp = "{0:x}".format(int(pub_exp))
     pub_exp = "0{0}".format(pub_exp) if len(pub_exp) % 2 else pub_exp
     header = {
@@ -94,7 +94,7 @@ def get_crt(config, log=LOGGER):
     common_name = re.search(r"Subject:.*? CN=([^\s,;/]+)", csr)
     if common_name is not None:
         domains.add(common_name.group(1))
-    subject_alt_names = re.search(r"X509v3 Subject Alternative Name: \n +([^\n]+)\n", csr, re.MULTILINE|re.DOTALL)
+    subject_alt_names = re.search(r"X509v3 Subject Alternative Name: \n +([^\n]+)\n", csr, re.MULTILINE | re.DOTALL)
     if subject_alt_names is not None:
         for san in subject_alt_names.group(1).split(", "):
             if san.startswith("DNS:"):
@@ -148,20 +148,20 @@ def get_crt(config, log=LOGGER):
             try:
                 log.info("check retry {0}, with nameservers: {1}".format(number_check_fail, resolver.nameservers))
                 resolver.names = [nameserver]
-                challenges = resolver.query(qname = dnsrr_domain, rdtype="TXT")
+                challenges = resolver.query(qname=dnsrr_domain, rdtype="TXT")
                 for response in challenges.rrset:
                     log.info("looking for {0}, found {1}, equals ? {2}".format(keydigest64, response.to_text(), response.to_text() == '"{0}"'.format(keydigest64)))
                     challenge_verified = challenge_verified or response.to_text() == '"{0}"'.format(keydigest64)
                 time.sleep(2)
                 if challenge_verified is False:
                     number_check_fail = number_check_fail + 1
-                
+
                 if number_check_fail > 10:
                     raise ValueError("Error checking challenge, value not found: {0} {1}".format(
-                    e.code, e.msg))
+                                     e.code, e.msg))
             except dns.exception.DNSException as e:
                 log.info("Info: retry, because a DNS error occurred while checking challenge: {0} {1}".format(e.code, e.msg))
-        
+
         log.info("Ask ACME server to perform check...")
         code, result, headers = _send_signed_request(challenge["uri"], {
             "resource": "challenge",
@@ -239,9 +239,9 @@ def main(argv):
     args = parser.parse_args(argv)
 
     config = ConfigParser()
-    config.read_dict({"acmednstiny" : {"CAUrl" : "https://acme-staging.api.letsencrypt.org",
-                                       "CheckChallengeDelay" : 2},
-                      "DNS" : { "Port" : "53" }})
+    config.read_dict({"acmednstiny": {"CAUrl": "https://acme-staging.api.letsencrypt.org",
+                                       "CheckChallengeDelay": 2},
+                      "DNS": {"Port": "53"}})
     config.read(args.configfile)
 
     if (set(["accountkeyfile", "csrfile", "caurl", "checkchallengedelay"]) - set(config.options("acmednstiny"))
@@ -253,5 +253,5 @@ def main(argv):
     signed_crt = get_crt(config, log=LOGGER)
     sys.stdout.write(signed_crt)
 
-if __name__ == "__main__": # pragma: no cover
+if __name__ == "__main__":  # pragma: no cover
     main(sys.argv[1:])
