@@ -32,6 +32,7 @@ def get_crt(config, log=LOGGER):
         elif action == "delete":
             dns_update.delete(rrset.name, rrset)
         resp = dns.query.tcp(dns_update, config["DNS"]["Host"], port=config.getint("DNS", "Port"))
+        log.info("Received update response: {0}".format(resp))
         dns_update = None
         return resp
 
@@ -62,10 +63,10 @@ def get_crt(config, log=LOGGER):
             nameserver = nameserver + [ipv6_rrset.to_text() for ipv6_rrset in dns.resolver.query(config["DNS"]["Host"], rdtype="AAAA")]
         finally:
             if not nameserver:
-                nameserver = config["DNS"]["Host"]
+                nameserver = [config["DNS"]["Host"]]
 
     resolver = dns.resolver.Resolver(configure=False)
-    resolver.names = [nameserver]
+    resolver.names = nameserver
     log.info("DNS checks will user servers: {0}".format(resolver.names))
 
     # parse account key to get public key
@@ -147,8 +148,7 @@ def get_crt(config, log=LOGGER):
         while challenge_verified is False:
             try:
                 log.info("check retry {0}, with nameservers: {1}".format(number_check_fail, resolver.nameservers))
-                resolver.names = [nameserver]
-                challenges = resolver.query(qname=dnsrr_domain, rdtype="TXT")
+                challenges = resolver.query(dnsrr_domain, rdtype="TXT")
                 for response in challenges.rrset:
                     log.info("looking for {0}, found {1}, equals ? {2}".format(keydigest64, response.to_text(), response.to_text() == '"{0}"'.format(keydigest64)))
                     challenge_verified = challenge_verified or response.to_text() == '"{0}"'.format(keydigest64)
