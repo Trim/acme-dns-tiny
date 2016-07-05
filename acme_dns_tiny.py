@@ -147,7 +147,7 @@ def get_crt(config, log=LOGGER):
         number_check_fail = 0
         while challenge_verified is False:
             try:
-                log.info("check retry {0}, with nameservers: {1}".format(number_check_fail, resolver.nameservers))
+                log.info("check retry {0}, with nameservers: {1}".format(number_check_fail, resolver.names))
                 challenges = resolver.query(dnsrr_domain, rdtype="TXT")
                 for response in challenges.rrset:
                     log.info("looking for {0}, found {1}, equals ? {2}".format(keydigest64, response.to_text(), response.to_text() == '"{0}"'.format(keydigest64)))
@@ -161,6 +161,8 @@ def get_crt(config, log=LOGGER):
                                      e.code, e.msg))
             except dns.exception.DNSException as e:
                 log.info("Info: retry, because a DNS error occurred while checking challenge: {0} {1}".format(e.code, e.msg))
+            except Exception as e:
+                log.info("Error: unknown error: {0} {1}".format(e.code, e.msg))
 
         log.info("Ask ACME server to perform check...")
         code, result, headers = _send_signed_request(challenge["uri"], {
