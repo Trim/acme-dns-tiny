@@ -66,6 +66,7 @@ def get_crt(config, log=LOGGER):
 
     resolver = dns.resolver.Resolver(configure=False)
     resolver.names = nameserver
+    resolver.retry_servfail = True
     log.info("DNS checks will user servers: {0}".format(resolver.names))
 
     # parse account key to get public key
@@ -150,15 +151,16 @@ def get_crt(config, log=LOGGER):
                 for response in challenges.rrset:
                     log.info("looking for {0}, found {1}, equals ? {2}".format(keydigest64, response.to_text(), response.to_text() == '"{0}"'.format(keydigest64)))
                     challenge_verified = challenge_verified or response.to_text() == '"{0}"'.format(keydigest64)
-                time.sleep(2)
-                if challenge_verified is False:
-                    number_check_fail = number_check_fail + 1
 
-                if number_check_fail > 10:
-                    raise ValueError("Error checking challenge, value not found: {0} {1}".format(
-                                     e.code, e.msg))
             except dns.exception.DNSException as e:
                 log.info("Info: retry, because a DNS error occurred while checking challenge: {0}".format(e))
+            finally:
+                if number_check_fail > 10:
+                    raise ValueError("Error checking challenge, value not found: {0}".format(keydigest64))
+                
+                if challenge_verified is False:
+                    number_check_fail = number_check_fail + 1
+                    time.sleep(2)
 
         log.info("Ask ACME server to perform check...")
         code, result, headers = _send_signed_request(challenge["uri"], {
