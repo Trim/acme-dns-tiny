@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-import argparse, subprocess, json, os, sys, base64, binascii, time, hashlib, re, copy, textwrap, logging
+import argparse, subprocess, json, sys, base64, binascii, time, hashlib, re, copy, textwrap, logging
 import dns.resolver, dns.tsigkeyring, dns.update
 from configparser import ConfigParser
 from urllib.request import urlopen
-from urllib.parse import parse_qs
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.StreamHandler())
