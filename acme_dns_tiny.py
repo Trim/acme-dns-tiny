@@ -136,8 +136,7 @@ def get_crt(config, log=LOGGER):
         try:
             _update_dns(dnsrr_set, "add")
         except dns.exception.DNSException as e:
-            raise ValueError("Error updating DNS: {0} {1}".format(
-                    e.code, e.msg))
+            raise ValueError("Error updating DNS: {0}".format(e))
 
         # notify challenge are met
         time.sleep(config["acmednstiny"].getint("CheckChallengeDelay"))
@@ -159,9 +158,7 @@ def get_crt(config, log=LOGGER):
                     raise ValueError("Error checking challenge, value not found: {0} {1}".format(
                                      e.code, e.msg))
             except dns.exception.DNSException as e:
-                log.info("Info: retry, because a DNS error occurred while checking challenge: {0} {1}".format(e.code, e.msg))
-            except Exception as e:
-                log.info("Error: unknown error: {0} {1}".format(e.code, e.msg))
+                log.info("Info: retry, because a DNS error occurred while checking challenge: {0}".format(e))
 
         log.info("Ask ACME server to perform check...")
         code, result, headers = _send_signed_request(challenge["uri"], {
