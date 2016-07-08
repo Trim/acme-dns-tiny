@@ -84,6 +84,8 @@ class TestModule(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main()
-    # delete account key registration at end of tests
-    delete_account(CONFIGS["key"]["accountkey"].name)
+    try:
+        unittest.main()
+    finally:
+        # delete account key registration at end of tests
+        delete_account(CONFIGS["key"]["accountkey"].name)
