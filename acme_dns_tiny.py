@@ -67,7 +67,7 @@ def get_crt(config, log=LOGGER):
     resolver = dns.resolver.Resolver(configure=False)
     resolver.names = nameserver
     resolver.retry_servfail = True
-    log.info("DNS checks will user servers: {0}".format(resolver.names))
+    log.info("DNS checks will use servers: {0}".format(resolver.nameservers))
 
     # parse account key to get public key
     log.info("Parsing account key...")
