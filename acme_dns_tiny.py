@@ -65,7 +65,7 @@ def get_crt(config, log=LOGGER):
                 nameserver = [config["DNS"]["Host"]]
 
     resolver = dns.resolver.Resolver(configure=False)
-    resolver.names = nameserver
+    resolver.nameservers = nameserver
     resolver.retry_servfail = True
     log.info("DNS checks will use servers: {0}".format(resolver.nameservers))
 
@@ -146,7 +146,7 @@ def get_crt(config, log=LOGGER):
         number_check_fail = 0
         while challenge_verified is False:
             try:
-                log.info("check retry {0}, with nameservers: {1}".format(number_check_fail, resolver.names))
+                log.info("check retry {0}, with nameservers: {1}".format(number_check_fail, resolver.nameservers))
                 challenges = resolver.query(dnsrr_domain, rdtype="TXT")
                 for response in challenges.rrset:
                     log.info("looking for {0}, found {1}, equals ? {2}".format(keydigest64, response.to_text(), response.to_text() == '"{0}"'.format(keydigest64)))
