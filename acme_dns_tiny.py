@@ -136,8 +136,8 @@ def get_crt(config, log=LOGGER):
         dnsrr_set = dns.rrset.from_text(dnsrr_domain, 300, "IN", "TXT",  '"{0}"'.format(keydigest64))
         try:
             _update_dns(dnsrr_set, "add")
-        except dns.exception.DNSException as e:
-            raise ValueError("Error updating DNS: {0}".format(e))
+        except dns.exception.DNSException as dnsexception:
+            raise ValueError("Error updating DNS: {0} : {1}".format(type(dnsexception).__name__, str(dnsexception)))
 
         # notify challenge are met
         time.sleep(config["acmednstiny"].getint("CheckChallengeDelay"))
@@ -152,8 +152,8 @@ def get_crt(config, log=LOGGER):
                     log.info("looking for {0}, found {1}, equals ? {2}".format(keydigest64, response.to_text(), response.to_text() == '"{0}"'.format(keydigest64)))
                     challenge_verified = challenge_verified or response.to_text() == '"{0}"'.format(keydigest64)
 
-            except dns.exception.DNSException as e:
-                log.info("Info: retry, because a DNS error occurred while checking challenge: {0}".format(e))
+            except dns.exception.DNSException as dnsexception:
+                log.info("Info: retry, because a DNS error occurred while checking challenge: {0} : {1}".format(type(dnsexception).__name__, str(dnsexception)))
             finally:
                 if number_check_fail > 10:
                     raise ValueError("Error checking challenge, value not found: {0}".format(keydigest64))
