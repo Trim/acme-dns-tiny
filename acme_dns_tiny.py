@@ -57,12 +57,12 @@ def get_crt(config, log=LOGGER):
     nameserver = []
     try:
         nameserver = [ipv4_rrset.to_text() for ipv4_rrset in dns.resolver.query(config["DNS"]["Host"], rdtype="A")]
-    except DNSException as e:
+    except dns.exception.DNSException as e:
         log.info("DNS Error catched, not an issue.")
     finally:
         try:
             nameserver = nameserver + [ipv6_rrset.to_text() for ipv6_rrset in dns.resolver.query(config["DNS"]["Host"], rdtype="AAAA")]
-        except DNSException as e:
+        except dns.exception.DNSException as e:
             log.info("DNS Error catched, not an issue.")
         finally:
             if not nameserver:
