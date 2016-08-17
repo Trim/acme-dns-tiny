@@ -56,9 +56,13 @@ def get_crt(config, log=LOGGER):
     keyring = dns.tsigkeyring.from_text({config["TSIGKeyring"]["KeyName"]: config["TSIGKeyring"]["KeyValue"]})
     try:
         nameserver = [ipv4_rrset.to_text() for ipv4_rrset in dns.resolver.query(config["DNS"]["Host"], rdtype="A")]
+    except DNSException as e:
+        log.info("DNS Error catched, not an issue.")
     finally:
         try:
             nameserver = nameserver + [ipv6_rrset.to_text() for ipv6_rrset in dns.resolver.query(config["DNS"]["Host"], rdtype="AAAA")]
+        except DNSException as e:
+            log.info("DNS Error catched, not an issue.")
         finally:
             if not nameserver:
                 nameserver = [config["DNS"]["Host"]]
@@ -154,7 +158,7 @@ def get_crt(config, log=LOGGER):
             finally:
                 if number_check_fail > 10:
                     raise ValueError("Error checking challenge, value not found: {0}".format(keydigest64))
-                
+
                 if challenge_verified is False:
                     number_check_fail = number_check_fail + 1
                     time.sleep(2)
