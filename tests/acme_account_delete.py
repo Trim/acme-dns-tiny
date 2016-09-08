@@ -1,5 +1,6 @@
 import subprocess, os, json, base64, binascii, re, copy, logging
 from urllib.request import urlopen
+from urllib.error import HTTPError
 
 ACMEDirectory = os.getenv("GITLABCI_ACMEDIRECTORY", "https://acme-staging.api.letsencrypt.org/directory")
 
@@ -9,9 +10,9 @@ LOGGER.setLevel(logging.INFO)
             
             
 def delete_account(accountkeypath, log=LOGGER):
-    # helper function base64 encode for jose spec
+    # helper function base64 encode as defined in acme spec
     def _b64(b):
-        return base64.urlsafe_b64encode(b).decode("utf8").replace("=", "")
+        return base64.urlsafe_b64encode(b).decode("utf8").rstrip("=", "")
 
     # helper function to run openssl command
     def _openssl(command, options, communicate=None):
@@ -36,9 +37,9 @@ def delete_account(accountkeypath, log=LOGGER):
         })
         try:
             resp = urlopen(url, data.encode("utf8"))
-            return resp.getcode(), resp.read()
-        except IOError as e:
-            return getattr(e, "code", None), getattr(e, "read", e.__str__)()
+            return resp.getcode(), resp.read(), resp.getheaders()
+        except HTTPError as httperror:
+            return httperror.getcode(), httperror.read(), httperror.getheaders()
 
     # parse account key to get public key
     log.info("Parsing account key...")
@@ -61,12 +62,24 @@ def delete_account(accountkeypath, log=LOGGER):
     directory = urlopen(ACMEDirectory)
     acme_config = json.loads(directory.read().decode("utf8"))
     
-    # send request to delete account key
+    log.info("Register account to get account URL.") 
+    code, result, headers = _send_signed_request(acme_config["new-reg"], {
+        "resource": "new-reg"
+    })
+
+    if code == 201:
+        account_url = dict(headers).get("Location")
+        log.info("Registered! (account: '{0}')".format(account_url))
+    elif code == 409:
+        account_url = dict(headers).get("Location")
+        log.info("Already registered! (account: '{0}')".format(account_url))
+
     log.info("Delete account...")
-    code, result = _send_signed_request(acme_config["new-reg"], {
+    code, result, headers = _send_signed_request(account_url, {
         "resource": "reg",
         "delete": True,
     })
+
     if code != 200:
         raise ValueError("Error deleting account key: {0} {1}".format(code, result))
     log.info("Account key deleted !")

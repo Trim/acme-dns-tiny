@@ -3,6 +3,7 @@ import argparse, subprocess, json, sys, base64, binascii, time, hashlib, re, cop
 import dns.resolver, dns.tsigkeyring, dns.update
 from configparser import ConfigParser
 from urllib.request import urlopen
+from urllib.error import HTTPError
 
 LOGGER = logging.getLogger('acme_dns_tiny_logger')
 LOGGER.addHandler(logging.StreamHandler())
@@ -49,12 +50,21 @@ def get_crt(config, log=LOGGER):
         try:
             resp = urlopen(url, data.encode("utf8"))
             return resp.getcode(), resp.read(), resp.getheaders()
-        except IOError as e:
-            return getattr(e, "code", None), getattr(e, "read", e.__str__)(), None
+        except HTTPError as httperror:
+            return httperror.getcode(), httperror.read(), httperror.getheaders()
 
-    # get ACME server configuration from the directory
+    # helper function to get url from Link HTTP headers
+    def _get_url_link(headers, rel):
+        linkheaders = [link.strip() for link in dict(headers)["Link"].split(',')]
+        url = [re.match(r'<(?P<url>.*)>.*;rel=(' + re.escape(rel) + r'|("([a-z][a-z0-9\.\-]*\s+)*' + re.escape(rel) + r'[\s"]))', link).groupdict()
+                        for link in linkheaders][0]["url"]
+        return url
+
+    # main code
+    log.info("Read ACME directory.")
     directory = urlopen(config["acmednstiny"]["ACMEDirectory"])
     acme_config = json.loads(directory.read().decode("utf8"))
+    current_terms = acme_config.get("meta", {}).get("terms-of-service")
 
     # create DNS keyring and resolver
     log.info("Prepare DNS tools...")
@@ -108,18 +118,48 @@ def get_crt(config, log=LOGGER):
             if san.startswith("DNS:"):
                 domains.add(san[4:])
 
-    # get the certificate domains and expiration
-    log.info("Registering account...")
-    code, result, headers = _send_signed_request(config["acmednstiny"]["CAUrl"] + "/acme/new-reg", {
-        "resource": "new-reg",
-        "agreement": "https://letsencrypt.org/documents/LE-SA-v1.1.1-August-1-2016.pdf",
-    })
+    log.info("Registering ACME Account.")
+    reg_info = {"resource": "new-reg"}
+    if current_terms is not None:
+        reg_info["agreement"] = current_terms
+    reg_info["contact"] = []
+    reg_mailto = "mailto:{0}".format(config["acmednstiny"].get("MailContact"))
+    reg_phone = "tel:{0}".format(config["acmednstiny"].get("PhoneContact"))
+    if config["acmednstiny"].get("MailContact") is not None:
+        reg_info["contact"].append(reg_mailto)
+    if config["acmednstiny"].get("PhoneContact") is not None:
+        reg_info["contact"].append(reg_phone)
+    if len(reg_info["contact"]) == 0:
+        del reg_info["contact"]
+    code, result, headers = _send_signed_request(acme_config["new-reg"], reg_info)
     if code == 201:
-        log.info("Registered!")
+        reg_received_contact = reg_info.get("contact")
+        account_url = dict(headers).get("Location")
+        log.info("Registered! (account: '{0}')".format(account_url))
     elif code == 409:
-        log.info("Already registered!")
+        account_url = dict(headers).get("Location")
+        log.info("Already registered! (account: '{0}')".format(account_url))
+        # Client should send empty payload to query account information
+        code, result, headers = _send_signed_request(account_url, {"resource":"reg"})
+        account_info = json.loads(result.decode("utf8"))
+        reg_info["agreement"] = account_info.get("agreement")
+        reg_received_contact = account_info.get("contact")
     else:
         raise ValueError("Error registering: {0} {1}".format(code, result))
+
+    log.info("Update contact information and terms of service agreement if needed.")
+    if current_terms is None:
+        current_terms = _get_url_link(headers, 'terms-of-service')
+    if (reg_info.get("agreement") != current_terms
+        or (config["acmednstiny"].get("MailContact") is not None and reg_mailto not in reg_received_contact)
+        or (config["acmednstiny"].get("PhoneContact") is not None and reg_phone not in reg_received_contact)):
+        reg_info["resource"] = "reg"
+        reg_info["agreement"] = current_terms
+        code, result, headers = _send_signed_request(account_url, reg_info)
+        if code == 202:
+            log.info("Account updated (terms of service agreed: '{0}')".format(reg_info.get("agreement")))
+        else:
+            raise ValueError("Error register update: {0} {1}".format(code, result))
 
     # verify each domain
     for domain in domains:
@@ -207,9 +247,7 @@ def get_crt(config, log=LOGGER):
     certificate = "\n".join(textwrap.wrap(base64.b64encode(result).decode("utf8"), 64))
 
     # get the parent certificate which had created this one
-    linkheader = [link.strip() for link in dict(headers)["Link"].split(',')]
-    certificate_parent_url = [re.match(r'<(?P<url>.*)>.*;rel=(up|("([a-z][a-z0-9\.\-]*\s+)*up[\s"]))', link).groupdict()
-                              for link in linkheader][0]["url"]
+    certificate_parent_url = _get_url_link(headers, 'up')
     resp = urlopen(certificate_parent_url)
     code = resp.getcode()
     result = resp.read()
@@ -231,7 +269,7 @@ def main(argv):
             chain from Let's Encrypt using the ACME protocol and its DNS verification.
             It will need to have access to your private account key and dns server
             so PLEASE READ THROUGH IT!
-            It's only ~250 lines, so it won't take long.
+            It's around 300 lines, so it won't take long.
 
             ===Example Usage===
             python3 acme_dns_tiny.py ./example.ini > chain.crt
