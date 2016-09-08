@@ -52,6 +52,27 @@ def get_crt(config, log=LOGGER):
         except IOError as e:
             return getattr(e, "code", None), getattr(e, "read", e.__str__)(), None
 
+    # helper function to get url from Link HTTP headers
+    def _get_url_link(headers, rel):
+        linkheaders = [link.strip() for link in dict(headers)["Link"].split(',')]
+        url = [re.match(r'<(?P<url>.*)>.*;rel=(' + re.escape(rel) + r'|("([a-z][a-z0-9\.\-]*\s+)*' + re.escape(rel) + r'[\s"]))', link).groupdict()
+                        for link in linkheaders][0]["url"]
+        return url
+
+    # helper function to register to ACME server
+    def _send_new_reg(terms_of_service):
+        fields = {"resource": "new-reg"}
+        if terms_of_service:
+            fields["agreement"] = terms_of_service
+        code, result, headers = _send_signed_request(acme_config["new-reg"], fields)
+        if code == 201:
+            log.info("Registered!")
+        elif code == 409:
+            log.info("Already registered!")
+        else:
+            raise ValueError("Error registering: {0} {1} {2}".format(code, headers, result))
+        return code, result, headers
+
     # get ACME server configuration from the directory
     directory = urlopen(config["acmednstiny"]["ACMEDirectory"])
     acme_config = json.loads(directory.read().decode("utf8"))
@@ -110,16 +131,12 @@ def get_crt(config, log=LOGGER):
 
     # get the certificate domains and expiration
     log.info("Registering account...")
-    code, result, headers = _send_signed_request(config["acmednstiny"]["CAUrl"] + "/acme/new-reg", {
-        "resource": "new-reg",
-        "agreement": "https://letsencrypt.org/documents/LE-SA-v1.1.1-August-1-2016.pdf",
-    })
-    if code == 201:
-        log.info("Registered!")
-    elif code == 409:
-        log.info("Already registered!")
-    else:
-        raise ValueError("Error registering: {0} {1}".format(code, result))
+    code, result, headers = _send_new_reg()
+    # check if terms-of-service have been given
+    terms_service_url = _get_url_link(headers, 'terms-of-service')
+    if terms_service_url:
+        log.info("terms of service exists... Give client agreement")
+        code, result, headers = _send_new_reg(terms_service_url)
 
     # verify each domain
     for domain in domains:
@@ -207,10 +224,7 @@ def get_crt(config, log=LOGGER):
     certificate = "\n".join(textwrap.wrap(base64.b64encode(result).decode("utf8"), 64))
 
     # get the parent certificate which had created this one
-    linkheader = [link.strip() for link in dict(headers)["Link"].split(',')]
-    certificate_parent_url = [re.match(r'<(?P<url>.*)>.*;rel=(up|("([a-z][a-z0-9\.\-]*\s+)*up[\s"]))', link).groupdict()
-                              for link in linkheader][0]["url"]
-    resp = urlopen(certificate_parent_url)
+    resp = urlopen(_get_url_link(headers, 'up'))
     code = resp.getcode()
     result = resp.read()
     if code not in [200, 201]:
