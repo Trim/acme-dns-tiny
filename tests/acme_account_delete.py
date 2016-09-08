@@ -57,9 +57,13 @@ def delete_account(accountkeypath, log=LOGGER):
         },
     }
     
+    # get ACME server configuration from the directory
+    directory = urlopen(ACMEDirectory)
+    acme_config = json.loads(directory.read())
+    
     # send request to delete account key
     log.info("Delete account...")
-    code, result = _send_signed_request(CAURL + "/acme/new-reg", {
+    code, result = _send_signed_request(acme_config["new-reg"], {
         "resource": "reg",
         "delete": True,
     })

@@ -52,6 +52,10 @@ def get_crt(config, log=LOGGER):
         except IOError as e:
             return getattr(e, "code", None), getattr(e, "read", e.__str__)(), None
 
+    # get ACME server configuration from the directory
+    directory = urlopen(config["acmednstiny"]["ACMEDirectory"])
+    acme_config = json.loads(directory.read())
+
     # create DNS keyring and resolver
     log.info("Prepare DNS tools...")
     keyring = dns.tsigkeyring.from_text({config["TSIGKeyring"]["KeyName"]: config["TSIGKeyring"]["KeyValue"]})
@@ -122,7 +126,7 @@ def get_crt(config, log=LOGGER):
         log.info("Verifying {0}...".format(domain))
 
         # get new challenge
-        code, result, headers = _send_signed_request(config["acmednstiny"]["CAUrl"] + "/acme/new-authz", {
+        code, result, headers = _send_signed_request(acme_config["new-authz"], {
             "resource": "new-authz",
             "identifier": {"type": "dns", "value": domain},
         })
@@ -194,7 +198,7 @@ def get_crt(config, log=LOGGER):
     # get the new certificate
     log.info("Signing certificate...")
     csr_der = _openssl("req", ["-in", config["acmednstiny"]["CSRFile"], "-outform", "DER"])
-    code, result, headers = _send_signed_request(config["acmednstiny"]["CAUrl"] + "/acme/new-cert", {
+    code, result, headers = _send_signed_request(acme_config["new-cert"], {
         "resource": "new-cert",
         "csr": _b64(csr_der),
     })
