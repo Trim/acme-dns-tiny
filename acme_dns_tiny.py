@@ -64,7 +64,7 @@ def get_crt(config, log=LOGGER):
 
     log.info("Read ACME directory.")
     directory = urlopen(config["acmednstiny"]["ACMEDirectory"])
-    acme_config = json.load(directory)
+    acme_config = json.load(directory.read())
     if b'meta' in acme_config and b'terms-of-service' in acme_config["meta"]:
         terms_service_url = acme_config["meta"]["terms-of-service"]
     else:
@@ -198,10 +198,10 @@ def get_crt(config, log=LOGGER):
             while True:
                 try:
                     resp = urlopen(challenge["uri"])
-                    challenge_status = json.load(resp)
+                    challenge_status = json.load(resp.read())
                 except IOError as e:
                     raise ValueError("Error checking challenge: {0} {1}".format(
-                        e.code, json.load(e)))
+                        e.code, json.load(e.read())))
                 if challenge_status["status"] == "pending":
                     time.sleep(2)
                 elif challenge_status["status"] == "valid":
