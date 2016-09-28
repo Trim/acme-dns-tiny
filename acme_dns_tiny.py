@@ -65,7 +65,7 @@ def get_crt(config, log=LOGGER):
     log.info("Read ACME directory.")
     directory = urlopen(config["acmednstiny"]["ACMEDirectory"])
     acme_config = json.load(directory)
-    if b"meta" in acme_config and b"terms-of-service" in acme_config["meta"]:
+    if b'meta' in acme_config and b'terms-of-service' in acme_config["meta"]:
         terms_service_url = acme_config["meta"]["terms-of-service"]
     else:
         terms_service_url = None
