@@ -59,23 +59,14 @@ def get_crt(config, log=LOGGER):
                         for link in linkheaders][0]["url"]
         return url
 
-    # helper function to register to ACME server
-    def _send_new_reg(terms_of_service=None):
-        fields = {"resource": "new-reg"}
-        if terms_of_service:
-            fields["agreement"] = terms_of_service
-        code, result, headers = _send_signed_request(acme_config["new-reg"], fields)
-        if code == 201:
-            log.info("Registered!")
-        elif code == 409:
-            log.info("Already registered!")
-        else:
-            raise ValueError("Error registering: {0} {1} {2}".format(code, headers, result))
-        return code, result, headers
 
-    # get ACME server configuration from the directory
+    log.info("Read ACME directory.")
     directory = urlopen(config["acmednstiny"]["ACMEDirectory"])
     acme_config = json.loads(directory.read().decode("utf8"))
+    if acme_config["meta"] and acme_config["meta"]["terms-of-service"]:
+        terms_service_url = acme_config["meta"]["terms-of-service"]
+    else:
+        terms_service_url = None
 
     # create DNS keyring and resolver
     log.info("Prepare DNS tools...")
@@ -129,14 +120,28 @@ def get_crt(config, log=LOGGER):
             if san.startswith("DNS:"):
                 domains.add(san[4:])
 
-    # get the certificate domains and expiration
-    log.info("Registering account...")
-    code, result, headers = _send_new_reg()
-    # check if terms-of-service have been given
-    terms_service_url = _get_url_link(headers, 'terms-of-service')
+    log.info("Registering ACME Account.")
+    fields = {"resource": "new-reg"}
     if terms_service_url:
-        log.info("terms of service exists... Give client agreement")
-        code, result, headers = _send_new_reg(terms_service_url)
+        fields["agreement"] = terms_service_url
+    fields["contact"] = ()
+    if config["acmednstiny"]["MailContact"]:
+        fields["contact"].append("mailto:{0}".format(config["acmednstiny"]["MailContact"]))
+    if config["acmednstiny"]["PhoneContact"]:
+        fields["contact"].append("tel:{0}".format(config["acmednstiny"]["PhoneContact"]))
+    if len(fields["contact"]) == 0:
+        del fields["contact"]
+    code, result, headers = _send_signed_request(acme_config["new-reg"], fields)
+    log.info("Account URL: {0}".dict(headers)["Location"])
+    if not terms_service_url:
+        terms_service_url = _get_url_link(headers, 'terms-of-service')
+        log.info("Received terms of service: {0}".format(agreement))
+    if code == 201:
+        log.info("Registered!")
+    elif code == 409:
+        log.info("Already registered!")
+    else:
+        raise ValueError("Error registering: {0} {1} {2}".format(code, headers, result))
 
     # verify each domain
     for domain in domains:
