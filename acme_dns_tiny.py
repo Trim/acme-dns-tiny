@@ -121,7 +121,7 @@ def get_crt(config, log=LOGGER):
 
     log.info("Registering ACME Account.")
     fields = {"resource": "new-reg"}
-    if terms_service_url:
+    if terms_service_url is not None:
         fields["agreement"] = terms_service_url
     fields["contact"] = ()
     if b'MailContact' in config["acmednstiny"]:
@@ -131,16 +131,28 @@ def get_crt(config, log=LOGGER):
     if len(fields["contact"]) == 0:
         del fields["contact"]
     code, result, headers = _send_signed_request(acme_config["new-reg"], fields)
-    log.info("Account URL: {0}".format(dict(headers)["Location"])
-    if not terms_service_url:
-        terms_service_url = _get_url_link(headers, 'terms-of-service')
-        log.info("Received terms of service: {0}".format(agreement))
     if code == 201:
-        log.info("Registered!")
+        log.info("Registered! (account: '{0}')".format(dict(headers)["Location"]))
     elif code == 409:
-        log.info("Already registered!")
+        registration_url = dict(headers)["Location"]
+        log.info("Already registered, so request update information (account: '{0}')".format(registration_url))
+        code, result, headers = _send_signed_request(registration_url, fields)
     else:
-        raise ValueError("Error registering: {0} {1} {2}".format(code, headers, result))
+        if terms_service_url is None:
+            terms_service_url = _get_url_link(headers, 'terms-of-service')
+            if terms_service_url is not None:
+                log.info("Received terms of service after registration request: {0}".format(agreement))
+                log.info("Try registering with these agreements.")
+                fields["agreement"] = terms_service_url
+                code, result, headers = _send_signed_request(acme_config["new-reg"], fields)
+                if code == 201:
+                    log.info("Registered! (account: '{0}')".format(dict(headers)["Location"]))
+                elif code == 409:
+                    log.info("Already registered! (account: '{0}')".format(dict(headers)["Location"]))
+                else:
+                    raise ValueError("Error registering: {0} {1} {2}".format(code, headers, result))
+        else:
+            raise ValueError("Error registering: {0} {1} {2}".format(code, headers, result))
 
     for domain in domains:
         log.info("Verifying domain: {0}".format(domain))
