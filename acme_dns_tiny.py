@@ -131,7 +131,7 @@ def get_crt(config, log=LOGGER):
     if len(fields["contact"]) == 0:
         del fields["contact"]
     code, result, headers = _send_signed_request(acme_config["new-reg"], fields)
-    log.info("Account URL: {0}".dict(headers)["Location"])
+    log.info("Account URL: {0}".format(dict(headers)["Location"])
     if not terms_service_url:
         terms_service_url = _get_url_link(headers, 'terms-of-service')
         log.info("Received terms of service: {0}".format(agreement))
