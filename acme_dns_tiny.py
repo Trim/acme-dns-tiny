@@ -124,9 +124,9 @@ def get_crt(config, log=LOGGER):
     if terms_service_url:
         fields["agreement"] = terms_service_url
     fields["contact"] = ()
-    if config["acmednstiny"]["MailContact"]:
+    if b'MailContact' in config["acmednstiny"]:
         fields["contact"].append("mailto:{0}".format(config["acmednstiny"]["MailContact"]))
-    if config["acmednstiny"]["PhoneContact"]:
+    if b'PhoneContact' in config["acmednstiny"]:
         fields["contact"].append("tel:{0}".format(config["acmednstiny"]["PhoneContact"]))
     if len(fields["contact"]) == 0:
         del fields["contact"]
