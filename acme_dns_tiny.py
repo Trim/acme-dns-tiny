@@ -134,7 +134,7 @@ def get_crt(config, log=LOGGER):
     if code == 201:
         log.info("Registered! (account: '{0}')".format(dict(headers)["Location"]))
     elif code == 409:
-        log.info("Already registered")
+        log.info("Already registered (headers: {0})".format(headers))
         if b'Location' in dict(headers):
             registration_url = dict(headers)["Location"]
             log.info("Request update informations (account: '{0}')".format(registration_url))
