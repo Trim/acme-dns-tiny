@@ -132,10 +132,10 @@ def get_crt(config, log=LOGGER):
         log.info("Registered! (account: '{0}')".format(dict(headers).get("Location")))
         reg_received_terms = _get_url_link(headers, 'terms-of-service')
     elif code == 409:
-        log.info("Already registered (headers: {0})".format(headers))
+        log.info("Already registered (headers: {0}, content: {1})".format(headers, result.read.decode("utf-8")))
         account_url = dict(headers).get("Location")
         if account_url is not None:
-            log.info("Update informations (account: '{0}')".format(registration_url))
+            log.info("Get account informations (account: '{0}')".format(registration_url))
             # Client should send empty payload to query account information
             code, result, headers = _send_signed_request(account_url, {})
             account_info = json.loads(result.read().decode("utf8"))
