@@ -65,10 +65,7 @@ def get_crt(config, log=LOGGER):
     log.info("Read ACME directory.")
     directory = urlopen(config["acmednstiny"]["ACMEDirectory"])
     acme_config = json.loads(directory.read().decode("utf8"))
-    if b'meta' in acme_config and b'terms-of-service' in acme_config["meta"]:
-        terms_service_url = acme_config["meta"]["terms-of-service"]
-    else:
-        terms_service_url = None
+    directory_terms_url = acme_config.get("meta", {}).get("terms-of-service")
 
     log.info("Prepare DNS keyring and resolver.")
     keyring = dns.tsigkeyring.from_text({config["TSIGKeyring"]["KeyName"]: config["TSIGKeyring"]["KeyValue"]})
@@ -120,39 +117,38 @@ def get_crt(config, log=LOGGER):
                 domains.add(san[4:])
 
     log.info("Registering ACME Account.")
-    fields = {"resource": "new-reg"}
-    if terms_service_url is not None:
-        fields["agreement"] = terms_service_url
-    fields["contact"] = ()
+    reg_info = {"resource": "new-reg"}
+    if directory_terms_url is not None:
+        reg_info["agreement"] = directory_terms_url
+    reg_info["contact"] = []
     if b'MailContact' in config["acmednstiny"]:
-        fields["contact"].append("mailto:{0}".format(config["acmednstiny"]["MailContact"]))
+        reg_info["contact"].append("mailto:{0}".format(config["acmednstiny"]["MailContact"]))
     if b'PhoneContact' in config["acmednstiny"]:
-        fields["contact"].append("tel:{0}".format(config["acmednstiny"]["PhoneContact"]))
-    if len(fields["contact"]) == 0:
-        del fields["contact"]
-    code, result, headers = _send_signed_request(acme_config["new-reg"], fields)
+        reg_info["contact"].append("tel:{0}".format(config["acmednstiny"]["PhoneContact"]))
+    if len(reg_info["contact"]) == 0:
+        del reg_info["contact"]
+    code, result, headers = _send_signed_request(acme_config["new-reg"], reg_info)
     if code == 201:
-        log.info("Registered! (account: '{0}')".format(dict(headers)["Location"]))
+        log.info("Registered! (account: '{0}')".format(dict(headers).get("Location")))
+        reg_received_terms = _get_url_link(headers, 'terms-of-service')
     elif code == 409:
         log.info("Already registered (headers: {0})".format(headers))
-        if b'Location' in dict(headers):
-            registration_url = dict(headers)["Location"]
-            log.info("Request update informations (account: '{0}')".format(registration_url))
-            code, result, headers = _send_signed_request(registration_url, fields)
+        account_url = dict(headers).get("Location")
+        if account_url is not None:
+            log.info("Update informations (account: '{0}')".format(registration_url))
+            # Client should send empty payload to query account information
+            code, result, headers = _send_signed_request(account_url, {})
+            account_info = json.loads(result.read().decode("utf8"))
+            reg_received_terms = account_info.get("agreement")
     else:
-        if terms_service_url is None:
-            terms_service_url = _get_url_link(headers, 'terms-of-service')
-            if terms_service_url is not None:
-                log.info("Received terms of service after registration request: {0}".format(agreement))
-                log.info("Try registering with these agreements.")
-                fields["agreement"] = terms_service_url
-                code, result, headers = _send_signed_request(acme_config["new-reg"], fields)
-                if code == 201:
-                    log.info("Registered! (account: '{0}')".format(dict(headers)["Location"]))
-                elif code == 409:
-                    log.info("Already registered! (account: '{0}')".format(dict(headers)["Location"]))
-                else:
-                    raise ValueError("Error registering: {0} {1} {2}".format(code, headers, result))
+        raise ValueError("Error registering: {0} {1} {2}".format(code, headers, result))
+
+    log.info("Terms of service agreement if needed.")
+    if reg_info.get("agreement") != reg_received_terms:
+        reg_info["agreement"] = reg_received_terms
+        code, result, headers = _send_signed_request(acme_config["new-reg"], reg_info)
+        if code == 201:
+            log.info("Terms of service agreed: {0}".format(reg_info.get("agreement")))
         else:
             raise ValueError("Error registering: {0} {1} {2}".format(code, headers, result))
 
