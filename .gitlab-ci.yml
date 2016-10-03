@@ -5,5 +5,5 @@ before_script:
 
 coverage:
   script:
-    - coverage run --source ./ -m unittest tests
+    - coverage run --source ./ -m unittest -v tests
     - coverage report --include=acme_dns_tiny.py
