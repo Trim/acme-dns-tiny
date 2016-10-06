@@ -118,6 +118,7 @@ def get_crt(config, log=LOGGER):
                 domains.add(san[4:])
 
     log.info("Registering ACME Account.")
+    reg_info = {}
     if directory_terms_url is not None:
         reg_info["agreement"] = directory_terms_url
     reg_info["contact"] = []
