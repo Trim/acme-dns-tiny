@@ -129,8 +129,9 @@ def get_crt(config, log=LOGGER):
         del reg_info["contact"]
     code, result, headers = _send_signed_request(acme_config["new-reg"], reg_info)
     if code == 201:
-        log.info("Registered! (account: '{0}')".format(dict(headers).get("Location")))
         reg_received_terms = _get_url_link(headers, 'terms-of-service')
+        account_url = dict(headers).get("Location")
+        log.info("Registered! (account: '{0}')".format(account_url))
     elif code == 409:
         log.info("Already registered (headers: {0}, content: {1})".format(dict(headers), result))
         account_url = dict(headers).get("Location")
@@ -146,7 +147,7 @@ def get_crt(config, log=LOGGER):
     log.info("Terms of service agreement if needed.")
     if reg_info.get("agreement") != reg_received_terms:
         reg_info["agreement"] = reg_received_terms
-        code, result, headers = _send_signed_request(acme_config["new-reg"], reg_info)
+        code, result, headers = _send_signed_request(account_url, reg_info)
         if code == 201:
             log.info("Terms of service agreed: {0}".format(reg_info.get("agreement")))
         else:
