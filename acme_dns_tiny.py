@@ -133,7 +133,7 @@ def get_crt(config, log=LOGGER):
         account_url = dict(headers).get("Location")
         log.info("Registered! (account: '{0}')".format(account_url))
     elif code == 409:
-        log.info("Already registered (headers: {0}, content: {1})".format(dict(headers), result))
+        log.info("Already registered (headers: {0}, content: {1})".format(headers, result))
         account_url = dict(headers).get("Location")
         if account_url is not None:
             log.info("Get account informations (account: '{0}')".format(registration_url))
