@@ -38,13 +38,13 @@ def get_crt(config, log=LOGGER):
     # helper function to send signed requests
     def _send_signed_request(url, payload):
         payload64 = _b64(json.dumps(payload).encode("utf8"))
-        protected = copy.deepcopy(header)
+        protected = copy.deepcopy(jws_header)
         protected["nonce"] = urlopen(config["acmednstiny"]["ACMEDirectory"]).headers["Replay-Nonce"]
         protected64 = _b64(json.dumps(protected).encode("utf8"))
         signature = _openssl("dgst", ["-sha256", "-sign", config["acmednstiny"]["AccountKeyFile"]],
                              "{0}.{1}".format(protected64, payload64).encode("utf8"))
         data = json.dumps({
-            "header": header, "protected": protected64,
+            "header": jws_header, "protected": protected64,
             "payload": payload64, "signature": _b64(signature),
         })
         try:
@@ -93,7 +93,7 @@ def get_crt(config, log=LOGGER):
         accountkey.decode("utf8"), re.MULTILINE | re.DOTALL).groups()
     pub_exp = "{0:x}".format(int(pub_exp))
     pub_exp = "0{0}".format(pub_exp) if len(pub_exp) % 2 else pub_exp
-    header = {
+    jws_header = {
         "alg": "RS256",
         "jwk": {
             "e": _b64(binascii.unhexlify(pub_exp.encode("utf-8"))),
@@ -101,7 +101,7 @@ def get_crt(config, log=LOGGER):
             "n": _b64(binascii.unhexlify(re.sub(r"(\s|:)", "", pub_hex).encode("utf-8"))),
         },
     }
-    accountkey_json = json.dumps(header["jwk"], sort_keys=True, separators=(",", ":"))
+    accountkey_json = json.dumps(jws_header["jwk"], sort_keys=True, separators=(",", ":"))
     thumbprint = _b64(hashlib.sha256(accountkey_json.encode("utf8")).digest())
 
     log.info("Parsing CSR looking for domains.")
