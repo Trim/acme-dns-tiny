@@ -146,6 +146,7 @@ def get_crt(config, log=LOGGER):
 
     log.info("Terms of service agreement if needed.")
     if reg_info.get("agreement") != reg_received_terms:
+        reg_info = {"resource": "reg"}
         reg_info["agreement"] = reg_received_terms
         code, result, headers = _send_signed_request(account_url, reg_info)
         if code == 201:
