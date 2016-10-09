@@ -43,7 +43,7 @@ def get_crt(config, log=LOGGER):
         signature = _openssl("dgst", ["-sha256", "-sign", config["acmednstiny"]["AccountKeyFile"]],
                              "{0}.{1}".format(protected64, payload64).encode("utf8"))
         data = json.dumps({
-            "header": header, "protected": protected64,
+            "header": jws_header, "protected": protected64,
             "payload": payload64, "signature": _b64(signature),
         })
         try:
