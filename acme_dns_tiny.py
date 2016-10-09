@@ -37,14 +37,13 @@ def get_crt(config, log=LOGGER):
     # helper function to send signed requests
     def _send_signed_request(url, payload):
         payload64 = _b64(json.dumps(payload).encode("utf8"))
-        protected = copy.deepcopy(jws_header)
+        protected = copy.deepcopy(header)
         protected["nonce"] = urlopen(config["acmednstiny"]["ACMEDirectory"]).headers["Replay-Nonce"]
-        protected["url"] = url
         protected64 = _b64(json.dumps(protected).encode("utf8"))
         signature = _openssl("dgst", ["-sha256", "-sign", config["acmednstiny"]["AccountKeyFile"]],
                              "{0}.{1}".format(protected64, payload64).encode("utf8"))
         data = json.dumps({
-            "header": jws_header, "protected": protected64,
+            "header": header, "protected": protected64,
             "payload": payload64, "signature": _b64(signature),
         })
         try:
@@ -94,7 +93,7 @@ def get_crt(config, log=LOGGER):
         accountkey.decode("utf8"), re.MULTILINE | re.DOTALL).groups()
     pub_exp = "{0:x}".format(int(pub_exp))
     pub_exp = "0{0}".format(pub_exp) if len(pub_exp) % 2 else pub_exp
-    jws_header = {
+    header = {
         "alg": "RS256",
         "jwk": {
             "e": _b64(binascii.unhexlify(pub_exp.encode("utf-8"))),
@@ -102,7 +101,7 @@ def get_crt(config, log=LOGGER):
             "n": _b64(binascii.unhexlify(re.sub(r"(\s|:)", "", pub_hex).encode("utf-8"))),
         },
     }
-    accountkey_json = json.dumps(jws_header["jwk"], sort_keys=True, separators=(",", ":"))
+    accountkey_json = json.dumps(header["jwk"], sort_keys=True, separators=(",", ":"))
     thumbprint = _b64(hashlib.sha256(accountkey_json.encode("utf8")).digest())
 
     log.info("Parsing CSR looking for domains.")
@@ -118,7 +117,7 @@ def get_crt(config, log=LOGGER):
                 domains.add(san[4:])
 
     log.info("Registering ACME Account.")
-    reg_info = {}
+    reg_info = {"resource": "new-reg"}
     if directory_terms_url is not None:
         reg_info["agreement"] = directory_terms_url
     reg_info["contact"] = []
@@ -159,6 +158,7 @@ def get_crt(config, log=LOGGER):
 
         # get new challenge
         code, result, headers = _send_signed_request(acme_config["new-authz"], {
+            "resource": "new-authz",
             "identifier": {"type": "dns", "value": domain},
         })
         if code != 201:
@@ -198,6 +198,7 @@ def get_crt(config, log=LOGGER):
                     time.sleep(2)
         log.info("Ask ACME server to perform checks.")
         code, result, headers = _send_signed_request(challenge["uri"], {
+            "resource": "challenge",
             "keyAuthorization": keyauthorization,
         })
         if code != 202:
@@ -226,6 +227,7 @@ def get_crt(config, log=LOGGER):
     log.info("Ask to sign certificate.")
     csr_der = _openssl("req", ["-in", config["acmednstiny"]["CSRFile"], "-outform", "DER"])
     code, result, headers = _send_signed_request(acme_config["new-cert"], {
+        "resource": "new-cert",
         "csr": _b64(csr_der),
     })
     if code != 201:
