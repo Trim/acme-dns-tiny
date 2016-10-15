@@ -1,4 +1,4 @@
-import subprocess, os, json, base64, binascii, re, copy, logging, urllib
+import subprocess, os, json, base64, binascii, re, copy, logging, urllib, urllib.request
 
 ACMEDirectory = os.getenv("GITLABCI_ACMEDIRECTORY", "https://acme-staging.api.letsencrypt.org/directory")
 
@@ -25,7 +25,7 @@ def delete_account(accountkeypath, log=LOGGER):
     def _send_signed_request(url, payload):
         payload64 = _b64(json.dumps(payload).encode("utf8"))
         protected = copy.deepcopy(header)
-        protected["nonce"] = urllib.urlopen(ACMEDirectory).headers["Replay-Nonce"]
+        protected["nonce"] = urllib.request.urlopen(ACMEDirectory).headers["Replay-Nonce"]
         protected64 = _b64(json.dumps(protected).encode("utf8"))
         signature = _openssl("dgst", ["-sha256", "-sign", accountkeypath],
                              "{0}.{1}".format(protected64, payload64).encode("utf8"))
@@ -34,7 +34,7 @@ def delete_account(accountkeypath, log=LOGGER):
             "payload": payload64, "signature": _b64(signature),
         })
         try:
-            resp = urllib.urlopen(url, data.encode("utf8"))
+            resp = urllib.request.urlopen(url, data.encode("utf8"))
             return resp.getcode(), resp.read()
         except urllib.error.HTTPError as httperror:
             return httperror.getcode(), httperror.read(), httperror.getheaders()
@@ -57,7 +57,7 @@ def delete_account(accountkeypath, log=LOGGER):
     }
     
     # get ACME server configuration from the directory
-    directory = urllib.urlopen(ACMEDirectory)
+    directory = urllib.request.urlopen(ACMEDirectory)
     acme_config = json.loads(directory.read().decode("utf8"))
     
     # send request to delete account key

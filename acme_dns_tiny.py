@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import argparse, subprocess, json, sys, base64, binascii, time, hashlib, re, copy, textwrap, logging, urllib
+import argparse, subprocess, json, sys, base64, binascii, time, hashlib, re, copy, textwrap, logging, urllib, urllib.request
 import dns.resolver, dns.tsigkeyring, dns.update
 from configparser import ConfigParser
 
@@ -37,7 +37,7 @@ def get_crt(config, log=LOGGER):
     def _send_signed_request(url, payload):
         payload64 = _b64(json.dumps(payload).encode("utf8"))
         protected = copy.deepcopy(jws_header)
-        protected["nonce"] = urllib.urlopen(config["acmednstiny"]["ACMEDirectory"]).headers["Replay-Nonce"]
+        protected["nonce"] = urllib.request.urlopen(config["acmednstiny"]["ACMEDirectory"]).headers["Replay-Nonce"]
         protected64 = _b64(json.dumps(protected).encode("utf8"))
         signature = _openssl("dgst", ["-sha256", "-sign", config["acmednstiny"]["AccountKeyFile"]],
                              "{0}.{1}".format(protected64, payload64).encode("utf8"))
@@ -46,7 +46,7 @@ def get_crt(config, log=LOGGER):
             "payload": payload64, "signature": _b64(signature),
         })
         try:
-            resp = urllib.urlopen(url, data.encode("utf8"))
+            resp = urllib.request.urlopen(url, data.encode("utf8"))
             return resp.getcode(), resp.read(), resp.getheaders()
         except urllib.error.HTTPError as httperror:
             return httperror.getcode(), httperror.read(), httperror.getheaders()
@@ -62,7 +62,7 @@ def get_crt(config, log=LOGGER):
     # main code
 
     log.info("Read ACME directory.")
-    directory = urllib.urlopen(config["acmednstiny"]["ACMEDirectory"])
+    directory = urllib.request.urlopen(config["acmednstiny"]["ACMEDirectory"])
     acme_config = json.loads(directory.read().decode("utf8"))
     directory_terms_url = acme_config.get("meta", {}).get("terms-of-service")
 
@@ -206,7 +206,7 @@ def get_crt(config, log=LOGGER):
         try:
             while True:
                 try:
-                    resp = urllib.urlopen(challenge["uri"])
+                    resp = urllib.request.urlopen(challenge["uri"])
                     challenge_status = json.loads(resp.read().decode("utf8"))
                 except IOError as e:
                     raise ValueError("Error checking challenge: {0} {1}".format(
@@ -234,7 +234,7 @@ def get_crt(config, log=LOGGER):
 
     # get the parent certificate which had created this one
     certificate_parent_url = _get_url_link(headers, 'up')
-    resp = urllib.urlopen(certificate_parent_url)
+    resp = urllib.request.urlopen(certificate_parent_url)
     code = resp.getcode()
     result = resp.read()
     if code not in [200, 201]:
