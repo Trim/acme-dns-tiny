@@ -10,9 +10,9 @@ LOGGER.addHandler(logging.StreamHandler())
 LOGGER.setLevel(logging.INFO)
 
 def get_crt(config, log=LOGGER):
-    # helper function base64 encode for jose spec
+    # helper function base64 encode as defined in acme spec
     def _b64(b):
-        return base64.urlsafe_b64encode(b).decode("utf8").replace("=", "")
+        return base64.urlsafe_b64encode(b).decode("utf8").rstrip("=")
 
     # helper function to run openssl command
     def _openssl(command, options, communicate=None):
@@ -55,7 +55,7 @@ def get_crt(config, log=LOGGER):
 
     # helper function to get url from Link HTTP headers
     def _get_url_link(headers, rel):
-        log.info("Looking for {0} in headers: {1}".format(rel, headers))
+        log.info("Looking for Link with rel='{0}' in headers".format(rel))
         linkheaders = [link.strip() for link in dict(headers)["Link"].split(',')]
         url = [re.match(r'<(?P<url>.*)>.*;rel=(' + re.escape(rel) + r'|("([a-z][a-z0-9\.\-]*\s+)*' + re.escape(rel) + r'[\s"]))', link).groupdict()
                         for link in linkheaders][0]["url"]
@@ -189,7 +189,7 @@ def get_crt(config, log=LOGGER):
         number_check_fail = 1
         while challenge_verified is False:
             try:
-                log.info('Try {0}: Check ressource with value "{1}" exits on nameservers: {2}'.format(number_check_fail+1, keydigest64, resolver.nameservers))
+                log.info('Try {0}: Check ressource with value "{1}" exits on nameservers: {2}'.format(number_check_fail, keydigest64, resolver.nameservers))
                 challenges = resolver.query(dnsrr_domain, rdtype="TXT")
                 for response in challenges.rrset:
                     log.info(".. Found value {0}".format(response.to_text()))
@@ -197,7 +197,7 @@ def get_crt(config, log=LOGGER):
             except dns.exception.DNSException as dnsexception:
                 log.info("Info: retry, because a DNS error occurred while checking challenge: {0} : {1}".format(type(dnsexception).__name__, dnsexception))
             finally:
-                if number_check_fail > 10:
+                if number_check_fail >= 10:
                     raise ValueError("Error checking challenge, value not found: {0}".format(keydigest64))
 
                 if challenge_verified is False:
