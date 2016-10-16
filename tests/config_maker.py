@@ -50,6 +50,8 @@ def gen_config():
     config.read("./example.ini".format(DOMAIN))
     config["acmednstiny"]["ACMEDirectory"] = ACMEDIRECTORY
     config["acmednstiny"]["CheckChallengeDelay"] = CHALLENGEDELAY
+    config["acmednstiny"]["MailContact"] = "mail@example.com"
+    del config["acmednstiny"]["PhoneContact"]
     config["TSIGKeyring"]["KeyName"] = TSIGKEYNAME
     config["TSIGKeyring"]["KeyValue"] = TSIGKEYVALUE
     config["TSIGKeyring"]["Algorithm"] = TSIGALGORITHM
