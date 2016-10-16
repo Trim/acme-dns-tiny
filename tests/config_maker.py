@@ -100,6 +100,7 @@ def gen_config():
         config.write(configfile)
     
     return {
+        # configs
         "goodCName": goodCName,
         "dnsHostIP": dnsHostIP,
         "goodSAN": goodSAN,
@@ -107,11 +108,13 @@ def gen_config():
         "accountAsDomain": accountAsDomain,
         "invalidTSIGName": invalidTSIGName,
         "missingDNS": missingDNS,
-        "key": {"accountkey": account_key,
-                 "weakkey": weak_key,
-                 "domainkey": domain_key},
-        "csr" : {"domaincsr": domain_csr,
-                 "sancsr": san_csr,
-                 "accountcsr": account_csr}
+        # keys (returned to keep files on system)
+        "accountkey": account_key,
+        "weakkey": weak_key,
+        "domainkey": domain_key,
+        # csr (returned to keep files on system)
+        "domaincsr": domain_csr,
+        "sancsr": san_csr,
+        "accountcsr": account_csr
     }
 
