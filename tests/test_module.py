@@ -11,6 +11,20 @@ CONFIGS = gen_config()
 class TestModule(unittest.TestCase):
     "Tests for acme_dns_tiny.get_crt()"
     
+    @classmethod
+    def setUpClass(cls):
+        super(TestModule, cls).setUpClass()
+
+    # To clean ACME staging server and close correctly temporary files
+    @classmethod
+    def tearDownClass(cls):
+        # delete account key registration at end of tests
+        delete_account(CONFIGS["accountkey"].name)
+        # close temp files correctly
+        for tmpfile in CONFIGS:
+            tmpfile.close()
+        super(TestModule, cls).tearDownClass()
+
     def setUp(self):
         logassert.setup(self, 'acme_dns_tiny_logger')
 
@@ -102,22 +116,4 @@ class TestModule(unittest.TestCase):
         self.assertIn("Some required settings are missing.", result.args[0])
 
 if __name__ == "__main__":
-    try:
-        unittest.main()
-    finally:
-        # delete account key registration at end of tests
-        delete_account(CONFIGS["key"]["accountkey"].name)
-        # close temp files correctly
-        CONFIGS["goodCName"].close()
-        CONFIGS["dnsHostIP"].close()
-        CONFIGS["goodSAN"].close()
-        CONFIGS["weakKey"].close()
-        CONFIGS["accountAsDomain"].close()
-        CONFIGS["invalidTSIGName"].close()
-        CONFIGS["missingDNS"].close()
-        CONFIGS["key"]["accountkey"].close()
-        CONFIGS["key"]["weakkey"].close()
-        CONFIGS["key"]["domainkey"].close()
-        CONFIGS["csr"]["domaincsr"].close()
-        CONFIGS["csr"]["sancsr"].close()
-        CONFIGS["csr"]["accountcsr"].close()
+    unittest.main()
