@@ -37,9 +37,10 @@ def get_crt(config, log=LOGGER):
 
     # helper function to send signed requests
     def _send_signed_request(url, payload):
+        global jws_nonce
         payload64 = _b64(json.dumps(payload).encode("utf8"))
         protected = copy.deepcopy(jws_header)
-        protected["nonce"] = urlopen(config["acmednstiny"]["ACMEDirectory"]).headers["Replay-Nonce"]
+        protected["nonce"] = jws_nonce or urlopen(config["acmednstiny"]["ACMEDirectory"]).getheader("Replay-Nonce", None)
         protected64 = _b64(json.dumps(protected).encode("utf8"))
         signature = _openssl("dgst", ["-sha256", "-sign", config["acmednstiny"]["AccountKeyFile"]],
                              "{0}.{1}".format(protected64, payload64).encode("utf8"))
@@ -49,9 +50,11 @@ def get_crt(config, log=LOGGER):
         })
         try:
             resp = urlopen(url, data.encode("utf8"))
-            return resp.getcode(), resp.read(), resp.getheaders()
         except HTTPError as httperror:
-            return httperror.getcode(), httperror.read(), httperror.getheaders()
+            resp = httperror
+        finally:
+            jws_nonce = resp.getheader("Replay-Nonce", None)
+            return resp.getcode(), resp.read(), resp.getheaders()
 
     # helper function to get url from Link HTTP headers
     def _get_url_link(headers, rel):
@@ -103,6 +106,7 @@ def get_crt(config, log=LOGGER):
     }
     accountkey_json = json.dumps(jws_header["jwk"], sort_keys=True, separators=(",", ":"))
     thumbprint = _b64(hashlib.sha256(accountkey_json.encode("utf8")).digest())
+    jws_nonce = None
 
     log.info("Parsing CSR looking for domains.")
     csr = _openssl("req", ["-in", config["acmednstiny"]["CSRFile"], "-noout", "-text"]).decode("utf8")
