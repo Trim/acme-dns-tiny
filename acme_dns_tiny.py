@@ -248,11 +248,10 @@ def get_crt(config, log=LOGGER):
     if resp.getcode() not in [200, 201]:
         raise ValueError("Error getting certificate chain from {0}: {1} {2}".format(
             certificate_parent_url, code, resp.read()))
-    certificate_parent = "\n".join(textwrap.wrap(base64.b64encode(resp.read()).decode("utf8"), 64))
+    intermediary_certificate = "\n".join(textwrap.wrap(base64.b64encode(resp.read()).decode("utf8"), 64))
 
     log.info("Certificate signed and received.")
-    return """-----BEGIN CERTIFICATE-----\n{0}\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\n{1}\n-----END CERTIFICATE-----\n""".format(
-        certificate, certificate_parent)
+    return "".join(["""-----BEGIN CERTIFICATE-----\n{0}\n-----END CERTIFICATE-----\n""".format(cert) for cert in [certificate, intermediary_certificate)])
 
 def main(argv):
     parser = argparse.ArgumentParser(
