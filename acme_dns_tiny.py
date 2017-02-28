@@ -72,22 +72,17 @@ def get_crt(config, log=LOGGER):
 
     log.info("Prepare DNS keyring and resolver.")
     keyring = dns.tsigkeyring.from_text({config["TSIGKeyring"]["KeyName"]: config["TSIGKeyring"]["KeyValue"]})
+    resolver = dns.resolver.Resolver(configure=False)
+    resolver.retry_servfail = True
     nameserver = []
     try:
         nameserver = [ipv4_rrset.to_text() for ipv4_rrset in dns.resolver.query(config["DNS"]["Host"], rdtype="A")]
+        nameserver = nameserver + [ipv6_rrset.to_text() for ipv6_rrset in dns.resolver.query(config["DNS"]["Host"], rdtype="AAAA")]
     except dns.exception.DNSException as e:
-        log.info("DNS IPv4 record not found for configured dns host.")
-    finally:
-        try:
-            nameserver = nameserver + [ipv6_rrset.to_text() for ipv6_rrset in dns.resolver.query(config["DNS"]["Host"], rdtype="AAAA")]
-        except dns.exception.DNSException as e:
-            log.info("DNS IPv4 and IPv6 records not found for configured dns host. Try to keep original name.")
-        finally:
-            if not nameserver:
-                nameserver = [config["DNS"]["Host"]]
-    resolver = dns.resolver.Resolver(configure=False)
+        log.info("A and/or AAAA DNS resources not found for configured dns host: we will use either resource found if exists or directly the DNS Host configuration.")
+    if not nameserver:
+        nameserver = [config["DNS"]["Host"]]
     resolver.nameservers = nameserver
-    resolver.retry_servfail = True
 
     log.info("Parsing account key looking for public key.")
     accountkey = _openssl("rsa", ["-in", config["acmednstiny"]["AccountKeyFile"], "-noout", "-text"])
