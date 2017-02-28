@@ -257,18 +257,18 @@ def get_crt(config, log=LOGGER):
 def main(argv):
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=textwrap.dedent("""\
-            This script automates the process of getting a signed TLS certificate
-            chain from Let's Encrypt using the ACME protocol and its DNS verification.
-            It will need to have access to your private account key and dns server
-            so PLEASE READ THROUGH IT!
-            It's around 300 lines, so it won't take long.
+        description="""
+This script automates the process of getting a signed TLS certificate
+chain from Let's Encrypt using the ACME protocol and its DNS verification.
+It will need to have access to your private account key and dns server
+so PLEASE READ THROUGH IT!
+It's around 300 lines, so it won't take long.
 
-            ===Example Usage===
-            python3 acme_dns_tiny.py ./example.ini > chain.crt
-            See example.ini file to configure correctly this script.
-            ===================
-            """)
+===Example Usage===
+python3 acme_dns_tiny.py ./example.ini > chain.crt
+See example.ini file to configure correctly this script.
+===================
+"""
     )
     parser.add_argument("--quiet", action="store_const", const=logging.ERROR, help="suppress output except for errors")
     parser.add_argument("configfile", help="path to your configuration file")
