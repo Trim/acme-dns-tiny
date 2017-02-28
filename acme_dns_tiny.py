@@ -128,14 +128,15 @@ def get_crt(config, log=LOGGER):
         reg_info["contact"].append(reg_phone)
     if len(reg_info["contact"]) == 0:
         del reg_info["contact"]
+
     code, result, headers = _send_signed_request(acme_config["new-reg"], reg_info)
     if code == 201:
-        reg_received_contact = reg_info.get("contact")
-        account_url = dict(headers).get("Location")
         log.info("Registered! (account: '{0}')".format(account_url))
-    elif code == 409:
         account_url = dict(headers).get("Location")
+        reg_received_contact = reg_info.get("contact")
+    elif code == 409:
         log.info("Already registered! (account: '{0}')".format(account_url))
+        account_url = dict(headers).get("Location")
         # Client should send empty payload to query account information
         code, result, headers = _send_signed_request(account_url, {"resource":"reg"})
         account_info = json.loads(result.decode("utf8"))
@@ -148,8 +149,8 @@ def get_crt(config, log=LOGGER):
     if current_terms is None:
         current_terms = _get_url_link(headers, 'terms-of-service')
     if (reg_info.get("agreement") != current_terms
-        or (config["acmednstiny"].get("MailContact") is not None and reg_mailto not in reg_received_contact)
-        or (config["acmednstiny"].get("PhoneContact") is not None and reg_phone not in reg_received_contact)):
+        or reg_mailto not in reg_received_contact
+        or reg_phone not in reg_received_contact):
         reg_info["resource"] = "reg"
         reg_info["agreement"] = current_terms
         code, result, headers = _send_signed_request(account_url, reg_info)
@@ -202,6 +203,7 @@ def get_crt(config, log=LOGGER):
                 if challenge_verified is False:
                     number_check_fail = number_check_fail + 1
                     time.sleep(2)
+
         log.info("Ask ACME server to perform checks.")
         code, result, headers = _send_signed_request(challenge["uri"], {
             "resource": "challenge",
