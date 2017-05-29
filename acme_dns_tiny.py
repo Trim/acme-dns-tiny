@@ -85,20 +85,39 @@ def get_crt(config, log=LOGGER):
     resolver.nameservers = nameserver
 
     log.info("Parsing account key looking for public key.")
-    accountkey = _openssl("rsa", ["-in", config["acmednstiny"]["AccountKeyFile"], "-noout", "-text"])
-    pub_hex, pub_exp = re.search(
-        r"modulus:\r?\n\s+00:([a-f0-9\:\s]+?)\r?\npublicExponent: ([0-9]+)",
-        accountkey.decode("utf8"), re.MULTILINE | re.DOTALL).groups()
-    pub_exp = "{0:x}".format(int(pub_exp))
-    pub_exp = "0{0}".format(pub_exp) if len(pub_exp) % 2 else pub_exp
-    jws_header = {
-        "alg": "RS256",
-        "jwk": {
-            "e": _b64(binascii.unhexlify(pub_exp.encode("utf-8"))),
-            "kty": "RSA",
-            "n": _b64(binascii.unhexlify(re.sub(r"(\s|:)", "", pub_hex).encode("utf-8"))),
-        },
-    }
+    if "rsa" in config["acmednstiny"]["AccountKeyType"].lower():
+        accountkey = _openssl("rsa", ["-in", config["acmednstiny"]["AccountKeyFile"], "-noout", "-text"])
+        pub_hex, pub_exp = re.search(
+            r"modulus:\r?\n\s+00:([a-f0-9\:\s]+?)\r?\npublicExponent: ([0-9]+)",
+            accountkey.decode("utf8"), re.MULTILINE | re.DOTALL).groups()
+        pub_exp = "{0:x}".format(int(pub_exp))
+        pub_exp = "0{0}".format(pub_exp) if len(pub_exp) % 2 else pub_exp
+        jws_header = {
+            "alg": "RS256",
+            "jwk": {
+                "e": _b64(binascii.unhexlify(pub_exp.encode("utf-8"))),
+                "kty": "RSA",
+                "n": _b64(binascii.unhexlify(re.sub(r"(\s|:)", "", pub_hex).encode("utf-8"))),
+            },
+        }
+    else if "ec" in config["acmednstiny"]["AccountKeyType"].lower():
+        accountkey = _openssl("ec", ["-in", config["acmednstiny"]["AccountKeyFile"], "-noout", "-text"])
+        pub_hex, pub_exp = re.search(
+            r"pub:\s*\r?\n\s+04:([a-f0-9\:\s]+?)\nASN1 OID: prime256v1\r?\n",
+            accountkey.decode("utf8"), re.MULTILINE | re.DOTALL).groups()
+        pub_exp = binascii.unhexlify(re.sub(r"(\s|:)", "", pub_hex.group(1)))
+        if len(pub_hex) != 64:
+            raise ValueError("Key error: public key has incorrect length")
+        jws_header = {
+            "alg": "ES256",
+            "jwk": {
+                "kty": "EC",
+                "x": _b64(pub_hex[:32]),
+                "y": _b64(pub_hex[32:]),
+            },
+        }
+    else:
+        raise ValueError("Error reading account key file {0}, uknown key type {1}".format(config["acmednstiny"]["AccountKeyFile"], config["acmednstiny"]["AccountKeyType"]))
     accountkey_json = json.dumps(jws_header["jwk"], sort_keys=True, separators=(",", ":"))
     thumbprint = _b64(hashlib.sha256(accountkey_json.encode("utf8")).digest())
     jws_nonce = None
@@ -278,7 +297,8 @@ See example.ini file to configure correctly this script.
 
     config = ConfigParser()
     config.read_dict({"acmednstiny": {"ACMEDirectory": "https://acme-staging.api.letsencrypt.org/directory",
-                                      "CheckChallengeDelay": 2},
+                                      "CheckChallengeDelay": 2,
+                                      "AccountKeyType": "rsa"},
                       "DNS": {"Port": "53"}})
     config.read(args.configfile)
 
