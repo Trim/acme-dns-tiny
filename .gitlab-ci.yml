@@ -1,2 +1,0 @@
-jessie:
-  script: "coverage run --source ./ -m unittest -v tests.test_acme_dns_tiny tests.test_acme_account_rollover tests.test_acme_account_delete"
