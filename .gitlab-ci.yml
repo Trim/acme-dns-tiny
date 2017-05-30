@@ -1,1 +1,3 @@
-script: "echo Hello world"
+jessietest:
+  script:
+    - "echo Hello world"
