@@ -1,5 +1,5 @@
-after_script:
-    - sleep 10
+#after_script:
+#    - sleep 10
 
 jessie:
   image: adt-jessie_dnspython3_1.11
