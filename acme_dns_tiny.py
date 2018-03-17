@@ -181,7 +181,7 @@ def get_crt(config, log=LOGGER):
         token = re.sub(r"[^A-Za-z0-9_\-]", "_", challenge["token"])
         keyauthorization = "{0}.{1}".format(token, thumbprint)
         keydigest64 = _b64(hashlib.sha256(keyauthorization.encode("utf8")).digest())
-        dnsrr_domain = "_acme-challenge.{0}.".format(domain)
+        dnsrr_domain = config["DNS"]["ChallengeDomain"].format(domain)
         dnsrr_set = dns.rrset.from_text(dnsrr_domain, 300, "IN", "TXT",  '"{0}"'.format(keydigest64))
         try:
             _update_dns(dnsrr_set, "add")
@@ -289,7 +289,7 @@ See example.ini file to configure correctly this script.
     config = ConfigParser()
     config.read_dict({"acmednstiny": {"ACMEDirectory": "https://acme-staging-v02.api.letsencrypt.org/directory",
                                       "CheckChallengeDelay": 3},
-                      "DNS": {"Port": "53"}})
+                      "DNS": {"ChallengeDomain": "_acme-challenge.{0}.", "Port": "53"}})
     config.read(args.configfile)
 
     if (set(["accountkeyfile", "csrfile", "acmedirectory", "checkchallengedelay"]) - set(config.options("acmednstiny"))
