@@ -235,7 +235,7 @@ def get_crt(config, csr_file, log=LOGGER):
     log.info("Request to finalize the order (all chalenge have been completed)")
     resp = webclient.open(order_location)
     finalize = json.loads(resp.read().decode("utf8"))
-    csr_der = _b64(_openssl("req", ["-in", config["acmednstiny"]["CSRFile"], "-outform", "DER"]))
+    csr_der = _b64(_openssl("req", ["-in", csr_file, "-outform", "DER"]))
     code, result, headers = _send_signed_request(order["finalize"], {"csr": csr_der})
     if code != 200:
         raise ValueError("Error while sending the CSR: {0} {1}".format(code, result))
