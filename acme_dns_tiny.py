@@ -9,7 +9,7 @@ LOGGER = logging.getLogger('acme_dns_tiny')
 LOGGER.addHandler(logging.StreamHandler())
 LOGGER.setLevel(logging.INFO)
 
-def get_crt(config, log=LOGGER):
+def get_crt(config, csr_file, log=LOGGER):
     # helper function base64 encode as defined in acme spec
     def _b64(b):
         return base64.urlsafe_b64encode(b).decode("utf8").rstrip("=")
@@ -104,7 +104,7 @@ def get_crt(config, log=LOGGER):
     jws_nonce = None
 
     log.info("Read CSR to find domains to validate.")
-    csr = _openssl("req", ["-in", config["acmednstiny"]["CSRFile"], "-noout", "-text"]).decode("utf8")
+    csr = _openssl("req", ["-in", csr_file, "-noout", "-text"]).decode("utf8")
     domains = set([])
     common_name = re.search(r"Subject:\s*?CN\s*?=\s*?([^\s,;/]+)", csr)
     if common_name is not None:
@@ -235,7 +235,7 @@ def get_crt(config, log=LOGGER):
     log.info("Request to finalize the order (all chalenge have been completed)")
     resp = webclient.open(order_location)
     finalize = json.loads(resp.read().decode("utf8"))
-    csr_der = _b64(_openssl("req", ["-in", config["acmednstiny"]["CSRFile"], "-outform", "DER"]))
+    csr_der = _b64(_openssl("req", ["-in", csr_file, "-outform", "DER"]))
     code, result, headers = _send_signed_request(order["finalize"], {"csr": csr_der})
     if code != 200:
         raise ValueError("Error while sending the CSR: {0} {1}".format(code, result))
@@ -277,13 +277,14 @@ so PLEASE READ THROUGH IT!
 It's around 300 lines, so it won't take long.
 
 ===Example Usage===
-python3 acme_dns_tiny.py ./example.ini > chain.crt
+python3 acme_dns_tiny.py ./example.ini ./yourdomain.csr > chain.crt
 See example.ini file to configure correctly this script.
 ===================
 """
     )
     parser.add_argument("--quiet", action="store_const", const=logging.ERROR, help="suppress output except for errors")
     parser.add_argument("configfile", help="path to your configuration file")
+    parser.add_argument("csrfile", help="path to your certificate request")
     args = parser.parse_args(argv)
 
     config = ConfigParser()
@@ -292,13 +293,13 @@ See example.ini file to configure correctly this script.
                       "DNS": {"Port": "53"}})
     config.read(args.configfile)
 
-    if (set(["accountkeyfile", "csrfile", "acmedirectory", "checkchallengedelay"]) - set(config.options("acmednstiny"))
+    if (set(["accountkeyfile", "acmedirectory", "checkchallengedelay"]) - set(config.options("acmednstiny"))
         or set(["keyname", "keyvalue", "algorithm"]) - set(config.options("TSIGKeyring"))
         or set(["zone", "host", "port"]) - set(config.options("DNS"))):
         raise ValueError("Some required settings are missing.")
 
     LOGGER.setLevel(args.quiet or LOGGER.level)
-    signed_crt = get_crt(config, log=LOGGER)
+    signed_crt = get_crt(config, args.csrfile, log=LOGGER)
     sys.stdout.write(signed_crt)
 
 if __name__ == "__main__":  # pragma: no cover
