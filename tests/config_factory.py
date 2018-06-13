@@ -33,7 +33,7 @@ def generate_config():
     parser["acmednstiny"]["AccountKeyFile"] = account_key.name
     parser["acmednstiny"]["CSRFile"] = domain_csr.name
     parser["acmednstiny"]["ACMEDirectory"] = ACMEDIRECTORY
-    if (CONTACT != null
+    if (CONTACT is not None
         and CONTACT != ""):
         parser["acmednstiny"]["Contacts"] = "mailto:{0}".format(CONTACT)
     else:
