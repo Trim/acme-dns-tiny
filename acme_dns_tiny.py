@@ -239,8 +239,6 @@ def get_crt(config, log=LOGGER):
             _update_dns(dnsrr_set, "delete")
 
     log.info("Request to finalize the order (all chalenge have been completed)")
-    resp = requests.get(order_location, headers=adtheaders)
-    finalize = resp.json()
     csr_der = _b64(_openssl("req", ["-in", config["acmednstiny"]["CSRFile"], "-outform", "DER"]))
     code, result, headers = _send_signed_request(order["finalize"], {"csr": csr_der})
     if code != 200:
@@ -250,30 +248,30 @@ def get_crt(config, log=LOGGER):
         try:
             resp = requests.get(order_location, headers=adtheaders)
             resp.raise_for_status()
-            finalize = resp.json()
+            order = resp.json()
         except requests.exceptions.RequestException as error:
             raise ValueError("Error finalizing order: {0} {1}".format(
                 error.response.status_code, error.response.text()))
 
-        if finalize["status"] == "processing":
+        if order["status"] == "processing":
             if resp.headers["Retry-After"]:
                 time.sleep(resp.headers["Retry-After"])
             else:
                 time.sleep(2)
-        elif finalize["status"] == "valid":
+        elif order["status"] == "valid":
             log.info("Order finalized!")
             break
         else:
             raise ValueError("Finalizing order {0} got errors: {1}".format(
-                domain, finalize))
+                domain, order))
     
-    resp = requests.get(finalize["certificate"], headers=adtheaders)
+    resp = requests.get(order["certificate"], headers=adtheaders)
     if resp.status_code != 200:
         raise ValueError("Finalizing order {0} got errors: {1}".format(
             resp.status_code, resp.json()))
     certchain = resp.text
     
-    log.info("Certificate signed and chain received: {0}".format(finalize["certificate"]))
+    log.info("Certificate signed and chain received: {0}".format(order["certificate"]))
     return certchain
 
 def main(argv):
