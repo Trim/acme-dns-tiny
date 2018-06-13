@@ -13,6 +13,7 @@ DNSTTL = os.getenv("GITLABCI_DNSTTL", "10")
 TSIGKEYNAME = os.getenv("GITLABCI_TSIGKEYNAME")
 TSIGKEYVALUE = os.getenv("GITLABCI_TSIGKEYVALUE")
 TSIGALGORITHM = os.getenv("GITLABCI_TSIGALGORITHM")
+CONTACT = os.getenv("GITLABCI_CONTACT")
 
 # generate simple config
 def generate_config():
@@ -32,7 +33,11 @@ def generate_config():
     parser["acmednstiny"]["AccountKeyFile"] = account_key.name
     parser["acmednstiny"]["CSRFile"] = domain_csr.name
     parser["acmednstiny"]["ACMEDirectory"] = ACMEDIRECTORY
-    parser["acmednstiny"]["Contacts"] = "mailto:mail@example.com"
+    if (CONTACT != null
+        and CONTACT != ""):
+        parser["acmednstiny"]["Contacts"] = "mailto:{0}".format(CONTACT)
+    else:
+        del parser["acmednstiny"]["Contacts"]
     parser["TSIGKeyring"]["KeyName"] = TSIGKEYNAME
     parser["TSIGKeyring"]["KeyValue"] = TSIGKEYVALUE
     parser["TSIGKeyring"]["Algorithm"] = TSIGALGORITHM
