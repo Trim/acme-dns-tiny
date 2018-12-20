@@ -128,7 +128,7 @@ def get_crt(config, log=LOGGER):
         account_request["termsOfServiceAgreed"] = True
         log.warning("Terms of service exists and will be automatically agreed, please read them: {0}".format(terms_service))
     account_request["contact"] = config["acmednstiny"].get("Contacts", "").split(';')
-    if account_request["contact"] == "":
+    if account_request["contact"] == [""]:
         del account_request["contact"]
 
     http_response, account_info = _send_signed_request(acme_config["newAccount"], account_request)
@@ -144,7 +144,7 @@ def get_crt(config, log=LOGGER):
         raise ValueError("Error registering account: {0} {1}".format(http_response.status_code, account_info))
 
     log.info("Update contact information if needed.")
-    if (set(account_request["contact"]) != set(account_info["contact"])):
+    if ("contact" in account_request and set(account_request["contact"]) != set(account_info["contact"])):
         http_response, result = _send_signed_request(jws_header["kid"], account_request)
         if http_response.status_code == 200:
             log.debug("  - Account updated with latest contact informations.")
