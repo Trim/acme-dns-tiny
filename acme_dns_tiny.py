@@ -257,14 +257,14 @@ def get_crt(config, log=LOGGER):
         else:
             raise ValueError("Finalizing order {0} got errors: {1}".format(
                 domain, order))
-    
+
     joseheaders['Accept'] = config["acmednstiny"].get("CertificateFormat", 'application/pem-certificate-chain')
     http_response, result = _send_signed_request(order["certificate"], "")
     if http_response.status_code != 200:
         raise ValueError("Finalizing order {0} got errors: {1}".format(http_response.status_code, result))
 
     if 'link' in http_response.headers:
-        log.info("  - Certificate links given by server: {0}", http_response.headers['link'])
+        log.info("  - Certificate links given by server: {0}".format(http_response.headers['link']))
 
     log.info("Certificate signed and chain received: {0}".format(order["certificate"]))
     return http_response.text
