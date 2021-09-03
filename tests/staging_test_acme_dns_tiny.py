@@ -130,19 +130,6 @@ class TestACMEDNSTiny(unittest.TestCase):
 
         self._assert_certificate_chain(certchain)
 
-    def test_success_dnshost_ip(self):
-        """Successfully issue a certificate when DNS Host is defined as an IP address."""
-        old_stdout = sys.stdout
-        sys.stdout = StringIO()
-
-        acme_dns_tiny.main([self.configs['dns_host_ip'], "--verbose"])
-        certchain = sys.stdout.getvalue()
-
-        sys.stdout.close()
-        sys.stdout = old_stdout
-
-        self._assert_certificate_chain(certchain)
-
     def test_success_san(self):
         """Successfully issue a certificate via subject alt name."""
         old_stdout = sys.stdout

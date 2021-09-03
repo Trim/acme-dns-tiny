@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # pylint: disable=multiple-imports
 """ACME client to met DNS challenge and receive TLS certificate"""
-import argparse, base64, binascii, configparser, copy, hashlib, ipaddress, json, logging
+import argparse, base64, binascii, configparser, copy, hashlib, json, logging
 import re, sys, subprocess, time
 import requests
 import dns.exception, dns.query, dns.name, dns.resolver, dns.rrset, dns.tsigkeyring, dns.update
@@ -30,31 +30,56 @@ def _openssl(command, options, communicate=None):
 def get_crt(config, log=LOGGER):
     """Get ACME certificate by resolving DNS challenge."""
 
+    def _get_authoritative_server_ips(zone, resolver):
+        """Get all authoritative server ips for a given zone"""
+        main_name = resolver.query(zone, rdtype="SOA")[0].mname
+        nameservers = [ns.target for ns in resolver.query(zone, rdtype="NS")]
+        nameservers_ipv4 = []
+        nameservers_ipv6 = []
+        # Add the main (aka "master") name server ip to the head of the list
+        # (see "Requestor Behavior" section of RFC 2136)
+        if main_name in nameservers:
+            nameservers_ipv6 += [ip.address for ip in resolver.query(main_name, rdtype="AAAA",
+                                                                     raise_on_no_answer=False)]
+            nameservers_ipv4 += [ip.address for ip in resolver.query(main_name, rdtype="A",
+                                                                     raise_on_no_answer=False)]
+        for nameserver in list(filter(lambda ns: ns != main_name, nameservers)):
+            nameservers_ipv6 += [ip.address for ip in resolver.query(nameserver, rdtype="AAAA",
+                                                                     raise_on_no_answer=False)]
+            nameservers_ipv4 += [ip.address for ip in resolver.query(nameserver, rdtype="A",
+                                                                     raise_on_no_answer=False)]
+        nameservers_ips = []
+        for ns_ip in nameservers_ipv6 + nameservers_ipv4:
+            if ns_ip not in nameservers_ips:
+                nameservers_ips.append(ns_ip)
+        return nameservers_ips
+
     def _update_dns(rrset, action, resolver):
         """Updates DNS resource by adding or deleting resource."""
         algorithm = dns.name.from_text("{0}".format(config["TSIGKeyring"]["Algorithm"].lower()))
-        dns_update = dns.update.Update(config["DNS"]["zone"],
+        dns_zone = dns.resolver.zone_for_name(rrset.name, resolver=resolver)
+        # Prepare dns update message
+        dns_update = dns.update.Update(dns_zone,
                                        keyring=private_keyring, keyalgorithm=algorithm)
         if action == "add":
             dns_update.add(rrset.name, rrset)
         elif action == "delete":
             dns_update.delete(rrset.name, rrset)
-        # Try each IP address found for the configured DNS Host to apply the DNS resource update
+        # Send DNS update request to main zone nameservers
         response = None
-        for nameserver in resolver.nameservers:
+        for nameserver in _get_authoritative_server_ips(dns_zone, resolver):
             try:
-                response = dns.query.tcp(dns_update, nameserver,
-                                         port=config.getint("DNS", "Port"))
+                response = dns.query.tcp(dns_update, nameserver)
             # pylint: disable=broad-except
             except Exception as exception:
-                log.debug("Unable to %s DNS resource on server with IP %s, try again with "
-                          "next available IP. Error detail: %s", action, nameserver, exception)
+                log.debug("Unable to %s DNS resource on dns main server with IP %s, try again "
+                          "with next available dns main server IP. Error detail: %s", action,
+                          nameserver, exception)
                 response = None
             if response is not None:
                 break
         if response is None:
             raise RuntimeError("Unable to {0} DNS resource to {1}".format(action, rrset.name))
-        return response
 
     def _send_signed_request(url, payload, extra_headers=None):
         """Sends signed requests to ACME server."""
@@ -117,31 +142,16 @@ def get_crt(config, log=LOGGER):
         raise ValueError("Didn't find any domain to validate in the provided CSR.")
 
     log.info("Configure DNS client tools.")
-    # That keyring is used to authenticate with the DNS server, it needs to be safely kept
+    # That keyring is used to authenticate with the main DNS server, it needs to be safely kept
     private_keyring = dns.tsigkeyring.from_text({config["TSIGKeyring"]["KeyName"]:
                                                  config["TSIGKeyring"]["KeyValue"]})
-    resolver = dns.resolver.Resolver(configure=False)
-    resolver.retry_servfail = True
-    nameserver = []
-    try:
-        ipaddress.ip_address(config["DNS"]["Host"])
-        nameserver.append(config["DNS"]["Host"])
-    except ValueError:
-        log.debug("  - Configured DNS Host value is not a valid IP address, "
-                  "try to resolve IP address by requesting system DNS servers.")
-        try:
-            nameserver += [ipv6_rrset.to_text() for ipv6_rrset
-                           in dns.resolver.query(config["DNS"]["Host"], rdtype="AAAA")]
-        except dns.exception.DNSException:
-            log.debug(("  - IPv6 addresses not found for the configured DNS Host."))
-        try:
-            nameserver += [ipv4_rrset.to_text() for ipv4_rrset
-                           in dns.resolver.query(config["DNS"]["Host"], rdtype="A")]
-        except dns.exception.DNSException:
-            log.debug("  - IPv4 addresses not found for the configured DNS Host.")
-    if not nameserver:
-        raise ValueError("Unable to resolve any IP address for the configured DNS Host name")
-    resolver.nameservers = nameserver
+    # Prepare DNS resolver
+    resolver = dns.resolver.Resolver(configure=True)
+    nameservers = list(filter(lambda ip: ip != "", config["DNS"]["NameServer"]
+                              .replace(" ", "").split(",")))
+    if nameservers:
+        resolver = dns.resolver.Resolver(configure=False)
+        resolver.nameservers = nameservers
 
     log.info("Get private signature from account key.")
     accountkey = _openssl("rsa", ["-in", config["acmednstiny"]["AccountKeyFile"],
@@ -382,15 +392,14 @@ from the configuration file.")
     config = configparser.ConfigParser()
     config.read_dict({
         "acmednstiny": {"ACMEDirectory": "https://acme-staging-v02.api.letsencrypt.org/directory"},
-        "DNS": {"Port": 53, "TTL": 10}})
+        "DNS": {"NameServer": "", "TTL": 10}})
     config.read(args.configfile)
 
     if args.csr:
         config.set("acmednstiny", "csrfile", args.csr)
 
     if (set(["accountkeyfile", "csrfile", "acmedirectory"]) - set(config.options("acmednstiny"))
-            or set(["keyname", "keyvalue", "algorithm"]) - set(config.options("TSIGKeyring"))
-            or set(["zone", "host", "port", "ttl"]) - set(config.options("DNS"))):
+            or set(["keyname", "keyvalue", "algorithm"]) - set(config.options("TSIGKeyring"))):
         raise ValueError("Some required settings are missing.")
 
     LOGGER.setLevel(args.verbose or args.quiet or logging.INFO)

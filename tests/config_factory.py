@@ -9,14 +9,11 @@ DOMAIN = os.getenv("GITLABCI_DOMAIN")
 ACMEDIRECTORY = os.getenv("GITLABCI_ACMEDIRECTORY_V2",
                           "https://acme-staging-v02.api.letsencrypt.org/directory")
 IS_PEBBLE = ACMEDIRECTORY.startswith('https://pebble')
-DNSHOST = os.getenv("GITLABCI_DNSHOST")
-DNSHOSTIP = os.getenv("GITLABCI_DNSHOSTIP")
-DNSZONE = os.getenv("GITLABCI_DNSZONE")
-DNSPORT = os.getenv("GITLABCI_DNSPORT", "53")
+DNSNAMESERVER = os.getenv("GITLABCI_DNSNAMESERVER", "")
 DNSTTL = os.getenv("GITLABCI_DNSTTL", "10")
-TSIGKEYNAME = os.getenv("GITLABCI_TSIGKEYNAME")
-TSIGKEYVALUE = os.getenv("GITLABCI_TSIGKEYVALUE")
-TSIGALGORITHM = os.getenv("GITLABCI_TSIGALGORITHM")
+TSIGKEYNAME = os.getenv("GITLABCI_TSIGKEYNAME", "")
+TSIGKEYVALUE = os.getenv("GITLABCI_TSIGKEYVALUE", "")
+TSIGALGORITHM = os.getenv("GITLABCI_TSIGALGORITHM", "")
 CONTACT = os.getenv("GITLABCI_CONTACT")
 
 
@@ -58,9 +55,7 @@ def generate_config(account_key_path=None):
     parser["TSIGKeyring"]["KeyName"] = TSIGKEYNAME
     parser["TSIGKeyring"]["KeyValue"] = TSIGKEYVALUE
     parser["TSIGKeyring"]["Algorithm"] = TSIGALGORITHM
-    parser["DNS"]["Host"] = DNSHOST
-    parser["DNS"]["Port"] = DNSPORT
-    parser["DNS"]["Zone"] = DNSZONE
+    parser["DNS"]["NameServer"] = DNSNAMESERVER
     parser["DNS"]["TTL"] = DNSTTL
 
     return account_key_path, domain_key.name, domain_csr.name, parser
@@ -72,12 +67,12 @@ def generate_acme_dns_tiny_unit_test_config():
     _, domain_key, _, config = generate_config()
     os.remove(domain_key)
 
-    missing_dns = NamedTemporaryFile(delete=False)
-    config["DNS"] = {}
-    with open(missing_dns.name, 'w') as configfile:
+    missing_tsigkeyring = NamedTemporaryFile(delete=False)
+    config["TSIGKeyring"] = {}
+    with open(missing_tsigkeyring.name, 'w') as configfile:
         config.write(configfile)
 
-    return {"missing_dns": missing_dns.name}
+    return {"missing_tsigkeyring": missing_tsigkeyring.name}
 
 
 def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many-statements
@@ -130,16 +125,6 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
 
     wild_cname = NamedTemporaryFile(delete=False)
     with open(wild_cname.name, 'w') as configfile:
-        config.write(configfile)
-
-    # Configuration with IP as DNS Host
-    _, domain_key, _, config = generate_config(account_key)
-    os.remove(domain_key)
-
-    config["DNS"]["Host"] = DNSHOSTIP
-
-    dns_host_ip = NamedTemporaryFile(delete=False)
-    with open(dns_host_ip.name, 'w') as configfile:
         config.write(configfile)
 
     # Configuration with CSR using subject alt-name domain instead of CN (common name)
@@ -195,7 +180,6 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
         "good_cname_without_contacts": good_cname_without_contacts.name,
         "good_cname_without_csr": good_cname_without_csr.name,
         "wild_cname": wild_cname.name,
-        "dns_host_ip": dns_host_ip.name,
         "good_san": good_san.name,
         "wild_san": wild_san.name,
         "invalid_tsig_name": invalid_tsig_name.name,

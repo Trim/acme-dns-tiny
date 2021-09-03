@@ -21,7 +21,7 @@ class TestACMEAccountDeactivate(unittest.TestCase):
         except ValueError as err:
             if str(err).startswith("Error register"):
                 raise ValueError("Fail test as account has not been registered correctly: {0}"
-                                 .format(err))
+                                 .format(err)) from err
 
         super(TestACMEAccountDeactivate, cls).setUpClass()
 

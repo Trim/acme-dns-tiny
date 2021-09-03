@@ -44,7 +44,8 @@ class TestACMEDNSTiny(unittest.TestCase):
     def test_failure_notcompleted_configuration(self):
         """ Configuration file have to be completed """
         self.assertRaisesRegex(ValueError, r"Some required settings are missing.",
-                               acme_dns_tiny.main, [self.configs['missing_dns'], "--verbose"])
+                               acme_dns_tiny.main, [self.configs['missing_tsigkeyring'],
+                                                    "--verbose"])
 
 
 if __name__ == "__main__":  # pragma: no cover
