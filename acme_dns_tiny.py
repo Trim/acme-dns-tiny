@@ -120,7 +120,7 @@ def get_crt(config, log=LOGGER):
             raise RuntimeError("Unable to get response from ACME server.")
 
     # main code
-    adtheaders = {'User-Agent': 'acme-dns-tiny/2.4',
+    adtheaders = {'User-Agent': 'acme-dns-tiny/3.0',
                   'Accept-Language': config["acmednstiny"].get("Language", "en")}
     nonce = None
 

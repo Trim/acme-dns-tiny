@@ -1,3 +1,48 @@
+# [v3.0](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v3.0) on 2022-01-31
+
+This new major version will *require you update your configuration file* to work.
+
+*BREAKING CHANGES*
+  * the `[DNS]` configuration section is completely optional and
+  modified: `Zone`, `Host` and `Port` have been removed and `NameServer`
+  has been added. See below for explanation.
+  * `acme-dns-tiny` now automatically resolves zone name and authoritative domain
+  name servers (DNS) according to `SOA` and `NS` DNS resource records
+
+Before version 3.0, `acme-dns-tiny` used the `Host` configuration as
+`DNS` nameserver to send `DNS` resource record requests *AND* to install the
+`DNS` resources to resolve `ACME` challenges.
+
+With version 3.0, `acme-dns-tiny` uses by default the system DNS nameserver
+to send `DNS` resource record requests.
+
+You can change this behavior with the new `NameServer` settings which defines
+a list of name server by IP addresses (separated by comma).
+
+With version 3.0, acme-dns-tiny will install `DNS` resource records required
+for the `ACME`challenges on the `DNS` zone defined by the `SOA` and `NS`
+resource records for *each domain* defined on the certificate signing request
+(the `CSR` file).
+
+As said above, for these two DNS requests (`SOA` and `NS` resource records),
+`acme-dns-tiny` will use by default the system `DNS` server or the one
+configured with `NameServer`.
+
+With `SOA` and `NS` `DNS` resource records, `acme-dns-tiny` is able to retrieve
+zone name and authoritative name server automatically.
+That's why `Zone` and `Host` configuration have been removed.
+
+Other changes:
+  * `master` git branch is replaced by the `main` one
+  * a `docker-compose` file is given as example to run a minimal `ACME` server
+  locally (as done on the Continuous Integration)
+  * a `.ide-example` gives some hints to developpers on how to configure their
+  development environment.
+  * use Python 3.2 context manager to run external commands (`openssl` and
+  `acme-dns-tiny` itself)
+  * for tests, use `items()` and `values()` to loop on configuration object
+  * improve Gitlab Continuous Integration (added `yamllint` job, `.plintrc`
+  configuration and pebble setup)
 
 # [v2.4](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.4) on 2021-10-01
 
