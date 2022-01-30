@@ -1,0 +1,11 @@
+---
+services:
+  acme-server:
+    image: letsencrypt/pebble:latest
+    environment:
+      PEBBLE_WFE_NONCEREJECT: 0
+      PEBBLE_AUTHZREUSE: 0
+    command: ["pebble", "-strict", "false"]
+    ports:
+      - "14000:14000"
+      - "15000:15000"

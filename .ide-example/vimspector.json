@@ -1,0 +1,69 @@
+{
+  "configurations": {
+    "1. Launch": {
+      "adapter": "debugpy",
+      "configuration": {
+        "name": "Launch",
+        "type": "python",
+        "request": "launch",
+        "python": ["/usr/bin/python3"],
+        "stopOnEntry": true,
+        "console": "externalTerminal",
+        "program": "acme_dns_tiny.py",
+        "args": ["--verbose", "example.ini"],
+        "env": {
+          "REQUESTS_CA_BUNDLE": "./tests/pebble.pem"
+        }
+      }
+    },
+    "2. Test acme-dns-tiny": {
+      "adapter": "debugpy",
+      "configuration": {
+        "name": "Launch",
+        "type": "python",
+        "request": "launch",
+        "python": ["/usr/bin/python3"],
+        "module": "unittest",
+        "args": [
+          "-v",
+          "tests.staging_test_acme_dns_tiny"
+        ],
+        "env": {
+          "REQUESTS_CA_BUNDLE": "./tests/pebble.pem",
+          "GITLABCI_ACMEDIRECTORY_V2": "https://pebble:14000/dir",
+          "GITLABCI_CONTACT": "acme-dns-tiny@example.com",
+          "GITLABCI_DNSNAMESERVER": "9.9.9.9",
+          "GITLABCI_DOMAIN": "secure.example.com",
+          "GITLABCI_TSIGALGORITHM": "HMAC-SHA256",
+          "GITLABCI_TSIGKEYNAME": "key",
+          "GITLABCI_TSIGKEYVALUE": "xxxxxxxxxxxxxxxxxxxxxx=="
+        }
+      }
+    },
+    "3. Test account tools": {
+      "adapter": "debugpy",
+      "configuration": {
+        "name": "Launch",
+        "type": "python",
+        "request": "launch",
+        "python": ["/usr/bin/python3"],
+        "module": "unittest",
+        "args": [
+          "-v",
+          "tests.staging_test_acme_account_rollover",
+          "tests.staging_test_acme_account_deactivate"
+        ],
+        "env": {
+          "REQUESTS_CA_BUNDLE": "./tests/pebble.pem",
+          "GITLABCI_ACMEDIRECTORY_V2": "https://pebble:14000/dir",
+          "GITLABCI_CONTACT": "acme-dns-tiny@example.com",
+          "GITLABCI_DNSNAMESERVER": "9.9.9.9",
+          "GITLABCI_DOMAIN": "secure.example.com",
+          "GITLABCI_TSIGALGORITHM": "HMAC-SHA256",
+          "GITLABCI_TSIGKEYNAME": "key",
+          "GITLABCI_TSIGKEYVALUE": "xxxxxxxxxxxxxxxxxxxxxx=="
+        }
+      }
+    }
+  }
+}

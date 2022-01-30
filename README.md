@@ -80,4 +80,13 @@ audited by anyone who wants to run it.
 If you want to add features for your own setup to make things easier for you,
 please do! It's open source, so feel free to fork it and modify as necessary.
 
+### Local testing
 
+You can run a minimal ACME server to run tests on your computer.
+
+In the folder `docker/acme-server`, you'll find a `docker-compose` configuration
+to easily start [pebble](https://github.com/letsencrypt/pebble) (a miniature ACME server
+created by Let's Encrypt to help ACME client developpers).
+
+In the folder `.ide-example`, you'll find example of configuration for some integrated
+development environment like [Vimspector](https://github.com/puremourning/vimspector).
