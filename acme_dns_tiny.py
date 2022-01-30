@@ -165,7 +165,7 @@ def get_crt(config, log=LOGGER):
     private_jwk = json.dumps(private_acme_signature["jwk"], sort_keys=True, separators=(",", ":"))
     jwk_thumbprint = _base64(hashlib.sha256(private_jwk.encode("utf8")).digest())
 
-    log.info("Fetch ACME server configuration from the its directory URL.")
+    log.info("Fetch ACME server configuration from its directory URL.")
     acme_config = requests.get(config["acmednstiny"]["ACMEDirectory"], headers=adtheaders).json()
     terms_service = acme_config.get("meta", {}).get("termsOfService", "")
 
