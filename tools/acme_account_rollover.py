@@ -23,12 +23,12 @@ def _b64(text):
 
 def _openssl(command, options, communicate=None):
     """Run openssl command line and raise IOError on non-zero return."""
-    openssl = subprocess.Popen(["openssl", command] + options, stdin=subprocess.PIPE,
-                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    out, err = openssl.communicate(communicate)
-    if openssl.returncode != 0:
-        raise IOError("OpenSSL Error: {0}".format(err))
-    return out
+    with subprocess.Popen(["openssl", command] + options, stdin=subprocess.PIPE,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE) as openssl:
+        out, err = openssl.communicate(communicate)
+        if openssl.returncode != 0:
+            raise IOError("OpenSSL Error: {0}".format(err))
+        return out
 
 
 def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, log=LOGGER):

@@ -16,13 +16,13 @@ ACME_DIRECTORY = os.getenv("GITLABCI_ACMEDIRECTORY_V2",
 
 def _openssl(command, options, communicate=None):
     """Helper function to run openssl command."""
-    openssl = subprocess.Popen(["openssl", command] + options,
-                               stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE)
-    out, err = openssl.communicate(communicate)
-    if openssl.returncode != 0:
-        raise IOError("OpenSSL Error: {0}".format(err))
-    return out.decode("utf8")
+    with subprocess.Popen(["openssl", command] + options,
+                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                          stderr=subprocess.PIPE) as openssl:
+        out, err = openssl.communicate(communicate)
+        if openssl.returncode != 0:
+            raise IOError("OpenSSL Error: {0}".format(err))
+        return out.decode("utf8")
 
 
 class TestACMEDNSTiny(unittest.TestCase):
@@ -171,24 +171,21 @@ class TestACMEDNSTiny(unittest.TestCase):
 
     def test_success_cli(self):
         """Successfully issue a certificate via command line interface."""
-        certout, _ = subprocess.Popen([
-            "python3", "acme_dns_tiny.py", self.configs['good_cname'], "--verbose"
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-
-        certchain = certout.decode("utf8")
-
-        self._assert_certificate_chain(certchain)
+        with subprocess.Popen(["python3", "acme_dns_tiny.py",
+                               self.configs['good_cname'], "--verbose"],
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE) as cli:
+            certout, _ = cli.communicate()
+            certchain = certout.decode("utf8")
+            self._assert_certificate_chain(certchain)
 
     def test_success_cli_with_csr_option(self):
         """Successfully issue a certificate via command line interface using CSR option."""
-        certout, _ = subprocess.Popen([
-            "python3", "acme_dns_tiny.py", "--csr", self.configs['cname_csr'],
-            self.configs['good_cname_without_csr'], "--verbose"
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-
-        certchain = certout.decode("utf8")
-
-        self._assert_certificate_chain(certchain)
+        with subprocess.Popen(["python3", "acme_dns_tiny.py", "--csr", self.configs['cname_csr'],
+                               self.configs['good_cname_without_csr'], "--verbose"],
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE) as cli:
+            certout, _ = cli.communicate()
+            certchain = certout.decode("utf8")
+            self._assert_certificate_chain(certchain)
 
     def test_failure_dns_update_tsigkeyname(self):
         """Fail to update DNS records by invalid TSIG Key name."""
