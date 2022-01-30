@@ -42,11 +42,11 @@ class TestACMEDNSTiny(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         # close temp files correctly
-        for conffile in cls.configs:
+        for conf_name, file in cls.configs.items():
             # for each configuration file, deactivate the account and remove linked temporary files
-            if conffile != "cname_csr":
+            if conf_name != "cname_csr":
                 parser = configparser.ConfigParser()
-                parser.read(cls.configs[conffile])
+                parser.read(file)
                 try:
                     account_deactivate(parser["acmednstiny"]["AccountKeyFile"], ACME_DIRECTORY)
                 except:
@@ -60,7 +60,7 @@ class TestACMEDNSTiny(unittest.TestCase):
                 except:
                     pass
             try:
-                os.remove(cls.configs[conffile])
+                os.remove(file)
             except:
                 pass
         super(TestACMEDNSTiny, cls).tearDownClass()

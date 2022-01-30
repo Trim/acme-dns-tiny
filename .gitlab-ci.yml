@@ -102,7 +102,7 @@ lint:
     - pylint3 --max-line-length=99 tools/acme_account_rollover.py
     - pylint3 --max-line-length=99 tests/config_factory.py
     - pylint3 --max-line-length=99 tests/staging_test_acme_dns_tiny.py
-    - pylint3 --max-line-length=99 tests/unit_test_acme_dns_tiny.py
+    - pylint3 --max-line-length=99 --disable=W0702 tests/unit_test_acme_dns_tiny.py
     - pylint3 --max-line-length=99 tests/staging_test_acme_account_deactivate.py
     - pylint3 --max-line-length=99 tests/staging_test_acme_account_rollover.py
 

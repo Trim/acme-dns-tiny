@@ -24,12 +24,21 @@ class TestACMEDNSTiny(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         # close temp files correctly
-        for conffile in cls.configs:
+        for file in cls.configs.values():
             parser = configparser.ConfigParser()
-            parser.read(cls.configs[conffile])
-            os.remove(parser["acmednstiny"]["AccountKeyFile"])
-            os.remove(parser["acmednstiny"]["CSRFile"])
-            os.remove(cls.configs[conffile])
+            parser.read(file)
+            try:
+                os.remove(parser["acmednstiny"]["AccountKeyFile"])
+            except:
+                pass
+            try:
+                os.remove(parser["acmednstiny"]["CSRFile"])
+            except:
+                pass
+            try:
+                os.remove(file)
+            except:
+                pass
         super(TestACMEDNSTiny, cls).tearDownClass()
 
     def test_failure_notcompleted_configuration(self):
