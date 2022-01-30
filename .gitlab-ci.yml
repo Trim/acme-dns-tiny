@@ -14,37 +14,37 @@ stages:
   stage: build
   only:
     - merge_requests
-    - master
+    - main
 
 .check:
   stage: check
   only:
     - merge_requests
-    - master
+    - main
 
 .unit_test:
   stage: unit_test
   only:
     - merge_requests
-    - master
+    - main
 
 .pebble_strict:
   stage: pebble_strict
   only:
     - merge_requests
-    - master
+    - main
 
 .pebble_breaking:
   stage: pebble_breaking
   only:
     - merge_requests
-    - master
+    - main
 
 .lets_encrypt_staging:
   stage: lets_encrypt_staging
   only:
     - merge_requests
-    - master
+    - main
 
 ###
 ### Stage: build
