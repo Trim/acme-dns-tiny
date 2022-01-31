@@ -112,6 +112,14 @@ pep8:
     - pycodestyle --max-line-length=99 --ignore=E401,W503 --exclude=tests .
     - pycodestyle --max-line-length=99 --ignore=E722 tests
 
+yamllint:
+  extends: .check
+  image:
+    name: cytopia/yamllint
+    entrypoint: ["/bin/ash", "-c"]
+  script:
+    - yamllint -f colored .
+
 ###
 ### Stage: unit_test
 ###
