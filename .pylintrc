@@ -1,0 +1,7 @@
+[MASTER]
+# Minimum supported python version
+py-version = 3.2.0
+
+[FORMAT]
+# Maximum number of characters on a single line.
+max-line-length=99

@@ -97,14 +97,14 @@ compile:
 lint:
   extends: .check-common
   script:
-    - pylint3 --max-line-length=99 acme_dns_tiny.py
-    - pylint3 --max-line-length=99 tools/acme_account_deactivate.py
-    - pylint3 --max-line-length=99 tools/acme_account_rollover.py
-    - pylint3 --max-line-length=99 tests/config_factory.py
-    - pylint3 --max-line-length=99 tests/staging_test_acme_dns_tiny.py
-    - pylint3 --max-line-length=99 --disable=W0702 tests/unit_test_acme_dns_tiny.py
-    - pylint3 --max-line-length=99 tests/staging_test_acme_account_deactivate.py
-    - pylint3 --max-line-length=99 tests/staging_test_acme_account_rollover.py
+    - pylint3 acme_dns_tiny.py
+    - pylint3 tools/acme_account_deactivate.py
+    - pylint3 tools/acme_account_rollover.py
+    - pylint3 tests/config_factory.py
+    - pylint3 tests/staging_test_acme_dns_tiny.py
+    - pylint3 --disable=W0702 tests/unit_test_acme_dns_tiny.py
+    - pylint3 tests/staging_test_acme_account_deactivate.py
+    - pylint3 tests/staging_test_acme_account_rollover.py
 
 pep8:
   extends: .check-common
