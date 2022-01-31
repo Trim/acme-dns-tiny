@@ -1,3 +1,4 @@
+---
 ###
 ### Pipeline(s) definition (stages and "only" keys)
 ###
@@ -60,26 +61,26 @@ stages:
 stretch-slim:
   extends: .build-common
   script:
-  - docker build 
-    --progress plain
-    -t "acme-dns-tiny:stretch-slim"
-    -f "docker/stretch/Dockerfile" .
+    - docker build
+      --progress plain
+      -t "acme-dns-tiny:stretch-slim"
+      -f "docker/stretch/Dockerfile" .
 
 buster-slim:
   extends: .build-common
   script:
-  - docker build
-    --progress plain
-    -t "acme-dns-tiny:buster-slim"
-    -f "docker/buster/Dockerfile" .
+    - docker build
+      --progress plain
+      -t "acme-dns-tiny:buster-slim"
+      -f "docker/buster/Dockerfile" .
 
 bullseye-slim:
   extends: .build-common
   script:
-  - docker build
-    --progress plain
-    -t "acme-dns-tiny:bullseye-slim"
-    -f "docker/bullseye/Dockerfile" .
+    - docker build
+      --progress plain
+      -t "acme-dns-tiny:bullseye-slim"
+      -f "docker/bullseye/Dockerfile" .
 
 ###
 ### Stage: check
@@ -154,9 +155,11 @@ bullseye-ut:
   variables:
     GITLABCI_ACMEDIRECTORY_V2: https://pebble:14000/dir
     REQUESTS_CA_BUNDLE: "./tests/pebble.pem"
-    # Never reject valid nonce, because, as script is tiny it doesn't manage it (user can run it again)
+    # Never reject valid nonce, because, as script is tiny it doesn't manage it
+    # (user can run it again)
     PEBBLE_WFE_NONCEREJECT: 0
-    # Never reuse already validated authorizations, so tests always have to validate challenges
+    # Never reuse already validated authorizations, so tests always have to
+    # validate challenges
     PEBBLE_AUTHZREUSE: 0
   services:
     - name: letsencrypt/pebble:latest
@@ -185,7 +188,7 @@ bullseye-pebble:
     - python3-coverage html
   artifacts:
     paths:
-     - htmlcov
+      - htmlcov
 
 ###
 ### Stage: pebble breaking changes allow to detect future change breaks
