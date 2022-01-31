@@ -88,7 +88,7 @@ bullseye-slim:
 
 .check-common:
   extends: .check
-  image: acme-dns-tiny:buster-slim
+  image: acme-dns-tiny:bullseye-slim
 
 compile:
   extends: .check-common
@@ -98,14 +98,14 @@ compile:
 lint:
   extends: .check-common
   script:
-    - pylint3 acme_dns_tiny.py
-    - pylint3 tools/acme_account_deactivate.py
-    - pylint3 tools/acme_account_rollover.py
-    - pylint3 tests/config_factory.py
-    - pylint3 tests/staging_test_acme_dns_tiny.py
-    - pylint3 --disable=W0702 tests/unit_test_acme_dns_tiny.py
-    - pylint3 tests/staging_test_acme_account_deactivate.py
-    - pylint3 tests/staging_test_acme_account_rollover.py
+    - pylint acme_dns_tiny.py
+    - pylint tools/acme_account_deactivate.py
+    - pylint tools/acme_account_rollover.py
+    - pylint tests/config_factory.py
+    - pylint tests/staging_test_acme_dns_tiny.py
+    - pylint --disable=W0702 tests/unit_test_acme_dns_tiny.py
+    - pylint tests/staging_test_acme_account_deactivate.py
+    - pylint tests/staging_test_acme_account_rollover.py
 
 pep8:
   extends: .check-common
