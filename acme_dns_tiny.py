@@ -277,15 +277,15 @@ def get_crt(config, log=LOGGER):
         number_check_fail = 1
         while challenge_verified is False:
             try:
-                log.debug(('Self test (try: %s): Check resource with value "%s" exits on '
-                           'nameservers: %s'), number_check_fail, keydigest64,
-                          resolver.nameservers)
+                log.info(('Self test (try: %s): Check resource with value "%s" exits on '
+                          'nameservers: %s'), number_check_fail, keydigest64,
+                         resolver.nameservers)
                 for response in resolver.query(dnsrr_domain, rdtype="TXT").rrset:
                     log.debug("  - Found value %s", response.to_text())
                     challenge_verified = (challenge_verified
                                           or response.to_text() == '"{0}"'.format(keydigest64))
             except dns.exception.DNSException as dnsexception:
-                log.debug(
+                log.info(
                     "  - Will retry as a DNS error occurred while checking challenge: %s : %s",
                     type(dnsexception).__name__, dnsexception)
             finally:
