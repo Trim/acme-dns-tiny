@@ -31,7 +31,7 @@ def _openssl(command, options, communicate=None):
 
 
 # pylint: disable=too-many-statements
-def account_deactivate(accountkeypath, acme_directory, log=LOGGER):
+def account_deactivate(accountkeypath, acme_directory, timeout, log=LOGGER):
     """Deactivate an ACME account."""
 
     def _send_signed_request(url, payload):
@@ -42,7 +42,8 @@ def account_deactivate(accountkeypath, acme_directory, log=LOGGER):
         else:
             payload64 = _b64(json.dumps(payload).encode("utf8"))
         protected = copy.deepcopy(private_acme_signature)
-        protected["nonce"] = nonce or requests.get(acme_config["newNonce"]).headers['Replay-Nonce']
+        protected["nonce"] = nonce or requests.get(
+            acme_config["newNonce"], headers=adtheaders, timeout=timeout).headers['Replay-Nonce']
         del nonce
         protected["url"] = url
         if url == acme_config["newAccount"]:
@@ -78,7 +79,7 @@ def account_deactivate(accountkeypath, acme_directory, log=LOGGER):
     nonce = None
 
     log.info("Fetch informations from the ACME directory.")
-    acme_config = requests.get(acme_directory, headers=adtheaders).json()
+    acme_config = requests.get(acme_directory, headers=adtheaders, timeout=timeout).json()
 
     log.info("Get private signature from account key.")
     accountkey = _openssl("rsa", ["-in", accountkeypath, "-noout", "-text"])
@@ -143,10 +144,13 @@ https://acme-staging-v02.api.letsencrypt.org/directory"""
     parser.add_argument("--quiet", action="store_const",
                         const=logging.ERROR,
                         help="suppress output except for errors")
+    parser.add_argument("--timeout", type=int, default=10,
+                        help="""Number of seconds to wait before ACME requests time out.
+                        Set it to 0 to wait indefinitely. Defaults to 10.""")
     args = parser.parse_args(argv)
 
     LOGGER.setLevel(args.quiet or logging.INFO)
-    account_deactivate(args.account_key, args.acme_directory, log=LOGGER)
+    account_deactivate(args.account_key, args.acme_directory, args.timeout or None, log=LOGGER)
 
 
 if __name__ == "__main__":  # pragma: no cover

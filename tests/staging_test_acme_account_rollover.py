@@ -9,6 +9,7 @@ import tools.acme_account_rollover
 
 ACME_DIRECTORY = os.getenv("GITLABCI_ACMEDIRECTORY_V2",
                            "https://acme-staging-v02.api.letsencrypt.org/directory")
+ACME_TIMEOUT = os.getenv("GITLABCI_ACMETIMEOUT", "10")
 
 
 class TestACMEAccountRollover(unittest.TestCase):
@@ -30,7 +31,8 @@ class TestACMEAccountRollover(unittest.TestCase):
         try:
             # deactivate account key registration at end of tests
             # (we assume the key has been rolled over)
-            account_deactivate(cls.configs["new_account_key"], ACME_DIRECTORY)
+            account_deactivate(
+                cls.configs["new_account_key"], ACME_DIRECTORY, ACME_TIMEOUT)
         except:
             pass
         try:

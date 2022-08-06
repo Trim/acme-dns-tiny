@@ -1,4 +1,4 @@
-# [v3.0](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v3.0) on 2022-01-31
+# [v3.0](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v3.0) TOBERELEASED
 
 This new major version will *require you update your configuration file* to work.
 
@@ -8,6 +8,8 @@ This new major version will *require you update your configuration file* to work
   has been added. See below for explanation.
   * `acme-dns-tiny` now automatically resolves zone name and authoritative domain
   name servers (DNS) according to `SOA` and `NS` DNS resource records
+  * Default timeout to ACME HTTP requests and DNS queries is set to 10 seconds
+  Previous behavior can be obtained by setting both timeouts to 0.
 
 Before version 3.0, `acme-dns-tiny` used the `Host` configuration as
 `DNS` nameserver to send `DNS` resource record requests *AND* to install the

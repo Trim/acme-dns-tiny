@@ -8,9 +8,11 @@ from subprocess import Popen
 DOMAIN = os.getenv("GITLABCI_DOMAIN")
 ACMEDIRECTORY = os.getenv("GITLABCI_ACMEDIRECTORY_V2",
                           "https://acme-staging-v02.api.letsencrypt.org/directory")
+ACMETIMEOUT = os.getenv("GITLABCI_ACMETIMEOUT", "10")
 IS_PEBBLE = ACMEDIRECTORY.startswith('https://pebble')
 DNSNAMESERVER = os.getenv("GITLABCI_DNSNAMESERVER", "")
 DNSTTL = os.getenv("GITLABCI_DNSTTL", "10")
+DNSTIMEOUT = os.getenv("GITLABCI_DNSTIMEOUT", "10")
 TSIGKEYNAME = os.getenv("GITLABCI_TSIGKEYNAME", "")
 TSIGKEYVALUE = os.getenv("GITLABCI_TSIGKEYVALUE", "")
 TSIGALGORITHM = os.getenv("GITLABCI_TSIGALGORITHM", "")
@@ -52,11 +54,15 @@ def generate_config(account_key_path=None):
         parser["acmednstiny"]["Contacts"] = "mailto:{0}".format(CONTACT)
     elif "Contacts" in parser:
         del parser["acmednstiny"]["Contacts"]
+    if ACMETIMEOUT:
+        parser["acmednstiny"]["Timeout"] = ACMETIMEOUT
     parser["TSIGKeyring"]["KeyName"] = TSIGKEYNAME
     parser["TSIGKeyring"]["KeyValue"] = TSIGKEYVALUE
     parser["TSIGKeyring"]["Algorithm"] = TSIGALGORITHM
     parser["DNS"]["NameServer"] = DNSNAMESERVER
     parser["DNS"]["TTL"] = DNSTTL
+    if DNSTIMEOUT:
+        parser["DNS"]["Timeout"] = DNSTIMEOUT
 
     return account_key_path, domain_key.name, domain_csr.name, parser
 

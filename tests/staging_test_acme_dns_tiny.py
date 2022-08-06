@@ -12,6 +12,7 @@ from tools.acme_account_deactivate import account_deactivate
 
 ACME_DIRECTORY = os.getenv("GITLABCI_ACMEDIRECTORY_V2",
                            "https://acme-staging-v02.api.letsencrypt.org/directory")
+ACME_TIMEOUT = os.getenv("GITLABCI_ACMETIMEOUT", "10")
 
 
 def _openssl(command, options, communicate=None):
@@ -48,7 +49,8 @@ class TestACMEDNSTiny(unittest.TestCase):
                 parser = configparser.ConfigParser()
                 parser.read(file)
                 try:
-                    account_deactivate(parser["acmednstiny"]["AccountKeyFile"], ACME_DIRECTORY)
+                    account_deactivate(
+                        parser["acmednstiny"]["AccountKeyFile"], ACME_DIRECTORY, ACME_TIMEOUT)
                 except:
                     pass
                 try:

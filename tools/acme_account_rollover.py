@@ -31,7 +31,8 @@ def _openssl(command, options, communicate=None):
         return out
 
 
-def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, log=LOGGER):
+# pylint: disable=too-many-locals
+def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, timeout, log=LOGGER):
     """Rollover the old and new account key for an ACME account."""
     def _get_private_acme_signature(accountkeypath):
         """Read the account key to get the signature to authenticate with the ACME server."""
@@ -75,7 +76,10 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, log
 
         if not is_inner:
             protected["nonce"] = (nonce
-                                  or requests.get(acme_config["newNonce"])
+                                  or requests.get(
+                                      acme_config["newNonce"],
+                                      headers=adtheaders,
+                                      timeout=timeout)
                                   .headers['Replay-Nonce'])
         protected["url"] = url
         protected64 = _b64(json.dumps(protected).encode("utf8"))
@@ -94,7 +98,7 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, log
             'Content-Type': 'application/jose+json'
         }
         try:
-            response = requests.post(url, json=jose, headers=joseheaders)
+            response = requests.post(url, json=jose, headers=joseheaders, timeout=timeout)
         except requests.exceptions.RequestException as error:
             response = error.response
         if response:
@@ -111,7 +115,7 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, log
     nonce = None
 
     log.info("Fetch informations from the ACME directory.")
-    acme_config = requests.get(acme_directory, headers=adtheaders).json()
+    acme_config = requests.get(acme_directory, headers=adtheaders, timeout=timeout).json()
 
     log.info("Get private signature from old account key.")
     private_acme_old_signature = _get_private_acme_signature(old_accountkeypath)
@@ -168,10 +172,13 @@ https://acme-staging-v02.api.letsencrypt.org/directory""")
                         help="ACME directory URL of the ACME server where to remove the key")
     parser.add_argument("--quiet", action="store_const", const=logging.ERROR,
                         help="suppress output except for errors")
+    parser.add_argument("--timeout", type=int, default=10,
+                        help="""Number of seconds to wait before ACME requests time out.
+                        Set it to 0 to wait indefinitely. Defaults to 10.""")
     args = parser.parse_args(argv)
 
     LOGGER.setLevel(args.quiet or logging.INFO)
-    account_rollover(args.current, args.new, args.acme_directory, log=LOGGER)
+    account_rollover(args.current, args.new, args.acme_directory, args.timeout or None, log=LOGGER)
 
 
 if __name__ == "__main__":  # pragma: no cover

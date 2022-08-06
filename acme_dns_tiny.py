@@ -32,22 +32,26 @@ def get_crt(config, log=LOGGER):
 
     def _get_authoritative_server_ips(zone, resolver):
         """Get all authoritative server ips for a given zone"""
-        main_name = resolver.query(zone, rdtype="SOA")[0].mname
-        nameservers = [ns.target for ns in resolver.query(zone, rdtype="NS")]
+        main_name = resolver.query(zone, rdtype="SOA", lifetime=dns_timeout)[0].mname
+        nameservers = [ns.target for ns in resolver.query(zone, rdtype="NS", lifetime=dns_timeout)]
         nameservers_ipv4 = []
         nameservers_ipv6 = []
         # Add the main (aka "master") name server ip to the head of the list
         # (see "Requestor Behavior" section of RFC 2136)
         if main_name in nameservers:
             nameservers_ipv6 += [ip.address for ip in resolver.query(main_name, rdtype="AAAA",
-                                                                     raise_on_no_answer=False)]
+                                                                     raise_on_no_answer=False,
+                                                                     lifetime=dns_timeout)]
             nameservers_ipv4 += [ip.address for ip in resolver.query(main_name, rdtype="A",
-                                                                     raise_on_no_answer=False)]
+                                                                     raise_on_no_answer=False,
+                                                                     lifetime=dns_timeout)]
         for nameserver in list(filter(lambda ns: ns != main_name, nameservers)):
             nameservers_ipv6 += [ip.address for ip in resolver.query(nameserver, rdtype="AAAA",
-                                                                     raise_on_no_answer=False)]
+                                                                     raise_on_no_answer=False,
+                                                                     lifetime=dns_timeout)]
             nameservers_ipv4 += [ip.address for ip in resolver.query(nameserver, rdtype="A",
-                                                                     raise_on_no_answer=False)]
+                                                                     raise_on_no_answer=False,
+                                                                     lifetime=dns_timeout)]
         nameservers_ips = []
         for ns_ip in nameservers_ipv6 + nameservers_ipv4:
             if ns_ip not in nameservers_ips:
@@ -69,7 +73,7 @@ def get_crt(config, log=LOGGER):
         response = None
         for nameserver in _get_authoritative_server_ips(dns_zone, resolver):
             try:
-                response = dns.query.tcp(dns_update, nameserver)
+                response = dns.query.tcp(dns_update, nameserver, timeout=dns_timeout)
             # pylint: disable=broad-except
             except Exception as exception:
                 log.debug("Unable to %s DNS resource on dns main server with IP %s, try again "
@@ -89,7 +93,8 @@ def get_crt(config, log=LOGGER):
         else:
             payload64 = _base64(json.dumps(payload).encode("utf8"))
         protected = copy.deepcopy(private_acme_signature)
-        protected["nonce"] = nonce or requests.get(acme_config["newNonce"]).headers['Replay-Nonce']
+        protected["nonce"] = nonce or requests.get(acme_config["newNonce"], headers=adtheaders,
+                                                   timeout=acme_timeout).headers['Replay-Nonce']
         del nonce
         protected["url"] = url
         if url == acme_config["newAccount"]:
@@ -107,7 +112,7 @@ def get_crt(config, log=LOGGER):
         joseheaders.update(adtheaders)
         joseheaders.update(extra_headers or {})
         try:
-            response = requests.post(url, json=jose, headers=joseheaders)
+            response = requests.post(url, json=jose, headers=joseheaders, timeout=acme_timeout)
         except requests.exceptions.RequestException as error:
             response = error.response
         if response:
@@ -120,8 +125,10 @@ def get_crt(config, log=LOGGER):
             raise RuntimeError("Unable to get response from ACME server.")
 
     # main code
+    acme_timeout = config["acmednstiny"].getint("Timeout") or None
+    dns_timeout = config["DNS"].getint("Timeout") or None
     adtheaders = {'User-Agent': 'acme-dns-tiny/3.0',
-                  'Accept-Language': config["acmednstiny"].get("Language", "en")}
+                  'Accept-Language': config["acmednstiny"]["Language"]}
     nonce = None
 
     log.info("Find domains to validate from the Certificate Signing Request (CSR) file.")
@@ -176,7 +183,8 @@ def get_crt(config, log=LOGGER):
     jwk_thumbprint = _base64(hashlib.sha256(private_jwk.encode("utf8")).digest())
 
     log.info("Fetch ACME server configuration from its directory URL.")
-    acme_config = requests.get(config["acmednstiny"]["ACMEDirectory"], headers=adtheaders).json()
+    acme_config = requests.get(config["acmednstiny"]["ACMEDirectory"], headers=adtheaders,
+                               timeout=acme_timeout).json()
     terms_service = acme_config.get("meta", {}).get("termsOfService", "")
 
     log.info("Register ACME Account to get the account identifier.")
@@ -185,7 +193,7 @@ def get_crt(config, log=LOGGER):
         account_request["termsOfServiceAgreed"] = True
         log.warning(("Terms of service exist and will be automatically agreed if possible, "
                      "you should read them: %s"), terms_service)
-    account_request["contact"] = config["acmednstiny"].get("Contacts", "").split(';')
+    account_request["contact"] = config["acmednstiny"]["Contacts"].split(';')
     if account_request["contact"] == [""]:
         del account_request["contact"]
 
@@ -266,7 +274,8 @@ def get_crt(config, log=LOGGER):
         try:  # a CNAME resource can be used for advanced TSIG configuration
             # Note: the CNAME target has to be of "non-CNAME" type (recursion isn't managed)
             dnsrr_domain = [response.to_text() for response
-                            in resolver.query(dnsrr_domain, rdtype="CNAME")][0]
+                            in resolver.query(dnsrr_domain, rdtype="CNAME",
+                                              lifetime=dns_timeout)][0]
             log.info("  - A CNAME resource has been found for this domain, will install TXT on %s",
                      dnsrr_domain)
         except dns.exception.DNSException as dnsexception:
@@ -290,7 +299,8 @@ def get_crt(config, log=LOGGER):
                 log.info(('Self test (try: %s): Check resource with value "%s" exits on '
                           'nameservers: %s'), number_check_fail, keydigest64,
                          resolver.nameservers)
-                for response in resolver.query(dnsrr_domain, rdtype="TXT").rrset:
+                for response in resolver.query(dnsrr_domain, rdtype="TXT",
+                                               lifetime=dns_timeout).rrset:
                     log.debug("  - Found value %s", response.to_text())
                     challenge_verified = (challenge_verified
                                           or response.to_text() == '"{0}"'.format(keydigest64))
@@ -391,8 +401,10 @@ from the configuration file.")
 
     config = configparser.ConfigParser()
     config.read_dict({
-        "acmednstiny": {"ACMEDirectory": "https://acme-staging-v02.api.letsencrypt.org/directory"},
-        "DNS": {"NameServer": "", "TTL": 10}})
+        "acmednstiny": {
+            "ACMEDirectory": "https://acme-staging-v02.api.letsencrypt.org/directory",
+            "Language": "en", "Contacts": "", "Timeout": 10},
+        "DNS": {"NameServer": "", "TTL": 10, "Timeout": 10}})
     config.read(args.configfile)
 
     if args.csr:
