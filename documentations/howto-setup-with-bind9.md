@@ -96,7 +96,7 @@ You have to copy TSIG informations from key file generated on the DNS server (us
 Keep the `ACMEDirectory` with *staging* Let's Encrypt url for your tests.
 
 ## Test and run !
-Run the python script with your configuration (see [How to use](./howto-use.m.mdd))
+Run the python script with your configuration (see [How to use](./howto-use.md))
 
 If some errors occur, read them carefully: python exceptions may give you enough details to fix your setup (file permissions, configuration errors, ...).
 

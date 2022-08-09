@@ -1,6 +1,6 @@
 FROM debian:buster-slim
 
-WORKDIR acme_dns_tiny
+WORKDIR /acme_dns_tiny
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \

@@ -21,13 +21,7 @@ to be as tiny as possible (currently less than 400 lines).
 **PLEASE READ THE SOURCE CODE! YOU MUST TRUST IT!
 IT HANDLES YOUR ACCOUNT PRIVATE KEY AND UPDATES SOME OF YOUR DNS RESOURCES !**
 
-The only prerequisites are Python 3 (at least 3.4), OpenSSL and the dnspython module.
-
-For the dnspython module, be aware that it won't work with release 1.14.0,
-because this one have a bug with dynamic DNS updates.
-You should either use an older version from dnspython3 module (python3 specific
-code) or any release of dnspython module (pyhton2 and python3 merged code) since
-1.15.0.
+The only prerequisites are Python 3 (at least 3.4), OpenSSL and the dnspython module (at least release 1.16).
 
 Note: this script is a fork of the [acme-tiny project](https://github.com/diafygi/acme-tiny)
 which uses ACME HTTP verification to create signed certificates.
@@ -79,14 +73,3 @@ audited by anyone who wants to run it.
 
 If you want to add features for your own setup to make things easier for you,
 please do! It's open source, so feel free to fork it and modify as necessary.
-
-### Local testing
-
-You can run a minimal ACME server to run tests on your computer.
-
-In the folder `docker/acme-server`, you'll find a `docker-compose` configuration
-to easily start [pebble](https://github.com/letsencrypt/pebble) (a miniature ACME server
-created by Let's Encrypt to help ACME client developpers).
-
-In the folder `.ide-example`, you'll find example of configuration for some integrated
-development environment like [Vimspector](https://github.com/puremourning/vimspector).
