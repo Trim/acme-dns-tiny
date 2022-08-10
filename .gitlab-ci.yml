@@ -187,6 +187,7 @@ bullseye-pebble:
       --include=acme_dns_tiny.py,tools/acme_account_rollover.py,tools/acme_account_deactivate.py
     - python3-coverage html
     - python3-coverage xml
+  coverage: '/^TOTAL.+\s+(\d+(?:\.\d+)?)%$/'
   artifacts:
     reports:
       coverage_report:
