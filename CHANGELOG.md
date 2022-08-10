@@ -1,4 +1,4 @@
-# [v3.0](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v3.0) TOBERELEASED
+# [v3.0](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v3.0) 2022-08-10
 
 This new major version will *require you update your configuration file* to work.
 
@@ -8,7 +8,7 @@ This new major version will *require you update your configuration file* to work
   has been added. See below for explanation.
   * `acme-dns-tiny` now automatically resolves zone name and authoritative domain
   name servers (DNS) according to `SOA` and `NS` DNS resource records
-  * Default timeout to ACME HTTP requests and DNS queries is set to 10 seconds
+  * Default timeout for ACME HTTP requests and DNS queries is set to 10 seconds.
   Previous behavior can be obtained by setting both timeouts to 0.
 
 Before version 3.0, `acme-dns-tiny` used the `Host` configuration as
@@ -43,7 +43,7 @@ Other changes:
   * use Python 3.2 context manager to run external commands (`openssl` and
   `acme-dns-tiny` itself)
   * for tests, use `items()` and `values()` to loop on configuration object
-  * improve Gitlab Continuous Integration (added `yamllint` job, `.plintrc`
+  * improve Gitlab Continuous Integration (added `yamllint` job, `.pylintrc`
   configuration and pebble setup)
 
 # [v2.4](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.4) on 2021-10-01
