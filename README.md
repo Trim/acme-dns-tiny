@@ -1,8 +1,8 @@
 # acme-dns-tiny
 
-[![Latest Release](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/badges/release.svg)](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/releases)
-[![pipeline status](https://projects.adorsaz.ch/adrien/acme-dns-tiny/badges/main/pipeline.svg)](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/pipelines/?page=1&scope=all&ref=main)
-[![coverage report](https://projects.adorsaz.ch/adrien/acme-dns-tiny/badges/main/coverage.svg)](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/pipelines/?page=1&scope=all&ref=main)
+[![Latest Release](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/badges/release.svg)](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/releases)
+[![pipeline status](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/badges/main/pipeline.svg)](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/pipelines/?page=1&scope=all&ref=main)
+[![coverage report](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/badges/main/coverage.svg)](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/pipelines/?page=1&scope=all&ref=main)
 
 This is a tiny, auditable script that you can throw on any secure machine to
 issue and renew [Let's Encrypt](https://letsencrypt.org/) certificates with DNS

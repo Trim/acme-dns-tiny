@@ -17,7 +17,7 @@ root ~ $ su - acme-dns
 * Change umask to create by default non-readable files and repository by others
 ```
 acme-dns ~ $ echo "umask 027" >> ~/.profile && umask 027
-acme-dns ~ $ git clone https://projects.adorsaz.ch/adrien/acme-dns-tiny.git
+acme-dns ~ $ git clone https://gitlab.adorsaz.ch/adrien/acme-dns-tiny.git
 ```
 * Create a directory which will contain account keys, certificate signature requests, ...
 ```

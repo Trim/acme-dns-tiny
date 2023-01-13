@@ -1,4 +1,4 @@
-# [v3.0](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v3.0) 2022-08-10
+# [v3.0](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v3.0) 2022-08-10
 
 This new major version will *require you update your configuration file* to work.
 
@@ -46,7 +46,7 @@ Other changes:
   * improve Gitlab Continuous Integration (added `yamllint` job, `.pylintrc`
   configuration and pebble setup)
 
-# [v2.4](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.4) on 2021-10-01
+# [v2.4](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.4) on 2021-10-01
 
 Feature fixed on v2.4:
   * correctly retrieve account information when it was already registred (afb7e988)
@@ -61,7 +61,7 @@ Continuous Integration:
 Documentation:
   * Move documentation from wiki to [`/documentations`](./documentations) directory so we can always synchronize it with code
 
-# [v2.3](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.3) on 2019-06-07
+# [v2.3](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.3) on 2019-06-07
 
 Feature fixed on v2.3:
   * fix compatibility with dnspython 2.0 (#11)
@@ -80,7 +80,7 @@ Continuous Integration improvement:
 Other:
   * the .gitignore file has been simplified
 
-# [v2.2](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.2) on 2020-06-14
+# [v2.2](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.2) on 2020-06-14
 
 Some bug fixes, code style following pep8 and updated Continuous Integration stages
 
@@ -92,7 +92,7 @@ Some bug fixes, code style following pep8 and updated Continuous Integration sta
 * simplified regexp used to read the account key (#10)
 * new Gitlab Continuous Integration configuration to build automatically docker images to run tests with always updated Debian Docker image (including Jessie, Stretch and Buster releases)
 
-# [v2.1](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.1) on 2018-12-09
+# [v2.1](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.1) on 2018-12-09
 
 A general rework of code has been made to be compatible with the latest ACME draft 16 (v2.0 of acme-dns-tiny was based on draft 9).
 
@@ -110,7 +110,7 @@ Finally, acme-dns-tiny itself had a lot of improvements:
 *  In the `CSR` file, the `CN` value can be anywhere in the `Subject` string
 *  If the `order` is already `ready` on the ACME server side, acme-dns-tiny doesn't run full process, but just ask the certificate chain.
 
-# [v2.0](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.0) on 2018-05-02
+# [v2.0](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v2.0) on 2018-05-02
 
 ** This release is only compatible with Let's Encrypt V2 API which is based on the 9th draft of ACME RFC. **
 
@@ -131,18 +131,18 @@ Some extra options has been added for advanced users:
 * If you installed a CNAME on domains prefixed by `_acme-challenge`, it will be followed to install the TXT records on the alias instead (note, it won't follow a chain of CNAME, just one alias as the project don't use a recursive DNS tool). That allows you to configure TSIG keys on a different zone and have more precise DNS update policy.
 
 
-# [v1.5](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.5) on 2017-04-07
+# [v1.5](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.5) on 2017-04-07
 
 A bit of code rework to be more clear, simpler unit tests and support for Windows end of lines
 (not tested on this OS, feedbacks are welcome !)
 
-# [v1.4](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.4) on 2017-02-28
+# [v1.4](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.4) on 2017-02-28
 
 * Use Nonce received in latest ACME server response if available
 * Added a script to implement account key rollover
 * Moved aside the script used to delete account key
 
-# [v1.3](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.3) on 2016-10-27
+# [v1.3](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.3) on 2016-10-27
 
 Use of ACME Directory and automatic update agreement to terms of service
 
@@ -161,16 +161,16 @@ Use of ACME Directory and automatic update agreement to terms of service
   * Update requirements to latest dnspython release (as release 1.15 has fixed the dns updates issue)
 * Update account delete script (you can find it in /tests/) according to updates of the main script
 
-# [v1.2](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.2) on 2016-08-24
+# [v1.2](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.2) on 2016-08-24
 
 * Add tests to cover more code
 * Clean a bit info messages
 * Fix typos
 
-# [v1.1](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.1) on 2016-08-16
+# [v1.1](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.1) on 2016-08-16
 
 * Update README links
 
-# [v1.0](https://projects.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.0) on 2016-08-16
+# [v1.0](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v1.0) on 2016-08-16
 
 * First release of acme-dns-tiny.
