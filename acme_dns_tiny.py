@@ -32,26 +32,30 @@ def get_crt(config, log=LOGGER):
 
     def _get_authoritative_server_ips(zone, resolver):
         """Get all authoritative server ips for a given zone"""
-        main_name = resolver.query(zone, rdtype="SOA", lifetime=dns_timeout)[0].mname
-        nameservers = [ns.target for ns in resolver.query(zone, rdtype="NS", lifetime=dns_timeout)]
+        main_name = resolver.resolve(zone, rdtype="SOA", lifetime=dns_timeout, search=True)[0].mname
+        nameservers = [ns.target for ns in resolver.resolve(zone, rdtype="NS", lifetime=dns_timeout, search=True)]
         nameservers_ipv4 = []
         nameservers_ipv6 = []
         # Add the main (aka "master") name server ip to the head of the list
         # (see "Requestor Behavior" section of RFC 2136)
         if main_name in nameservers:
-            nameservers_ipv6 += [ip.address for ip in resolver.query(main_name, rdtype="AAAA",
+            nameservers_ipv6 += [ip.address for ip in resolver.resolve(main_name, rdtype="AAAA",
                                                                      raise_on_no_answer=False,
-                                                                     lifetime=dns_timeout)]
-            nameservers_ipv4 += [ip.address for ip in resolver.query(main_name, rdtype="A",
+                                                                     lifetime=dns_timeout,
+                                                                     search=True)]
+            nameservers_ipv4 += [ip.address for ip in resolver.resolve(main_name, rdtype="A",
                                                                      raise_on_no_answer=False,
-                                                                     lifetime=dns_timeout)]
+                                                                     lifetime=dns_timeout,
+                                                                     search=True)]
         for nameserver in list(filter(lambda ns: ns != main_name, nameservers)):
-            nameservers_ipv6 += [ip.address for ip in resolver.query(nameserver, rdtype="AAAA",
+            nameservers_ipv6 += [ip.address for ip in resolver.resolve(nameserver, rdtype="AAAA",
                                                                      raise_on_no_answer=False,
-                                                                     lifetime=dns_timeout)]
-            nameservers_ipv4 += [ip.address for ip in resolver.query(nameserver, rdtype="A",
+                                                                     lifetime=dns_timeout,
+                                                                     search=True)]
+            nameservers_ipv4 += [ip.address for ip in resolver.resolve(nameserver, rdtype="A",
                                                                      raise_on_no_answer=False,
-                                                                     lifetime=dns_timeout)]
+                                                                     lifetime=dns_timeout,
+                                                                     search=True)]
         nameservers_ips = []
         for ns_ip in nameservers_ipv6 + nameservers_ipv4:
             if ns_ip not in nameservers_ips:
@@ -274,8 +278,8 @@ def get_crt(config, log=LOGGER):
         try:  # a CNAME resource can be used for advanced TSIG configuration
             # Note: the CNAME target has to be of "non-CNAME" type (recursion isn't managed)
             dnsrr_domain = [response.to_text() for response
-                            in resolver.query(dnsrr_domain, rdtype="CNAME",
-                                              lifetime=dns_timeout)][0]
+                            in resolver.resolve(dnsrr_domain, rdtype="CNAME",
+                                              lifetime=dns_timeout, search=True)][0]
             log.info("  - A CNAME resource has been found for this domain, will install TXT on %s",
                      dnsrr_domain)
         except dns.exception.DNSException as dnsexception:
@@ -299,8 +303,8 @@ def get_crt(config, log=LOGGER):
                 log.info(('Self test (try: %s): Check resource with value "%s" exits on '
                           'nameservers: %s'), number_check_fail, keydigest64,
                          resolver.nameservers)
-                for response in resolver.query(dnsrr_domain, rdtype="TXT",
-                                               lifetime=dns_timeout).rrset:
+                for response in resolver.resolve(dnsrr_domain, rdtype="TXT",
+                                               lifetime=dns_timeout, search=True).rrset:
                     log.debug("  - Found value %s", response.to_text())
                     challenge_verified = (challenge_verified
                                           or response.to_text() == '"{0}"'.format(keydigest64))
