@@ -58,14 +58,6 @@ stages:
     DOCKER_DRIVER: overlay2
     DOCKER_BUILDKIT: 1
 
-stretch-slim:
-  extends: .build-common
-  script:
-    - docker build
-      --progress plain
-      -t "acme-dns-tiny:stretch-slim"
-      -f "docker/stretch/Dockerfile" .
-
 buster-slim:
   extends: .build-common
   script:
@@ -82,13 +74,21 @@ bullseye-slim:
       -t "acme-dns-tiny:bullseye-slim"
       -f "docker/bullseye/Dockerfile" .
 
+bookworm-slim:
+  extends: .build-common
+  script:
+    - docker build
+      --progress plain
+      -t "acme-dns-tiny:bookworm-slim"
+      -f "docker/bookworm/Dockerfile" .
+
 ###
 ### Stage: check
 ###
 
 .check-common:
   extends: .check
-  image: acme-dns-tiny:bullseye-slim
+  image: acme-dns-tiny:bookworm-slim
 
 compile:
   extends: .check-common
@@ -131,10 +131,6 @@ yamllint:
     - python3-coverage run --append --source ./ -m unittest -v
       tests.unit_test_acme_dns_tiny
 
-stretch-ut:
-  extends: .unit_test-common
-  image: acme-dns-tiny:stretch-slim
-
 buster-ut:
   extends: .unit_test-common
   image: acme-dns-tiny:buster-slim
@@ -142,6 +138,10 @@ buster-ut:
 bullseye-ut:
   extends: .unit_test-common
   image: acme-dns-tiny:bullseye-slim
+
+bookworm-ut:
+  extends: .unit_test-common
+  image: acme-dns-tiny:bookworm-slim
   artifacts:
     paths:
       - .coverage
@@ -171,10 +171,6 @@ bullseye-ut:
       tests.staging_test_acme_account_rollover
       tests.staging_test_acme_account_deactivate
 
-stretch-pebble:
-  extends: .pebble_strict_common
-  image: acme-dns-tiny:stretch-slim
-
 buster-pebble:
   extends: .pebble_strict_common
   image: acme-dns-tiny:buster-slim
@@ -182,6 +178,10 @@ buster-pebble:
 bullseye-pebble:
   extends: .pebble_strict_common
   image: acme-dns-tiny:bullseye-slim
+
+bookworm-pebble:
+  extends: .pebble_strict_common
+  image: acme-dns-tiny:bookworm-slim
   after_script:
     - python3-coverage report
       --include=acme_dns_tiny.py,tools/acme_account_rollover.py,tools/acme_account_deactivate.py
@@ -210,9 +210,9 @@ bullseye-pebble:
       alias: pebble
   allow_failure: true
 
-bullseye_pebble_breaking:
+bookworm_pebble_breaking:
   extends: .pebble_breaking_common
-  image: acme-dns-tiny:bullseye-slim
+  image: acme-dns-tiny:bookworm-slim
 
 ###
 ### Stage: Let's Encrypt staging
@@ -226,6 +226,6 @@ bullseye_pebble_breaking:
       tests.staging_test_acme_account_rollover
       tests.staging_test_acme_account_deactivate
 
-bullseye-le-staging:
+bookworm-le-staging:
   extends: .lets_encrypt_staging_common
-  image: acme-dns-tiny:bullseye-slim
+  image: acme-dns-tiny:bookworm-slim
