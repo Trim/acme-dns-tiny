@@ -1,4 +1,5 @@
 """Create real temporary ACME dns tiny configurations to run tests with real server"""
+# pylint: disable=consider-using-with
 import os
 import configparser
 from tempfile import NamedTemporaryFile
@@ -32,7 +33,7 @@ def generate_config(account_key_path=None):
     domain_csr = NamedTemporaryFile(delete=False)
     if IS_PEBBLE:  # Pebble server enforces usage of SAN instead of CN
         san_conf = NamedTemporaryFile(delete=False)
-        with open("/etc/ssl/openssl.cnf", 'r') as opensslcnf:
+        with open("/etc/ssl/openssl.cnf", 'r', encoding='utf-8') as opensslcnf:
             san_conf.write(opensslcnf.read().encode("utf8"))
         san_conf.write("\n[SAN]\nsubjectAltName=DNS:{0}\n".format(DOMAIN).encode("utf8"))
         san_conf.seek(0)
@@ -75,7 +76,7 @@ def generate_acme_dns_tiny_unit_test_config():
 
     missing_tsigkeyring = NamedTemporaryFile(delete=False)
     config["TSIGKeyring"] = {}
-    with open(missing_tsigkeyring.name, 'w') as configfile:
+    with open(missing_tsigkeyring.name, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
     return {"missing_tsigkeyring": missing_tsigkeyring.name}
@@ -88,7 +89,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     os.remove(domain_key)
 
     good_cname = NamedTemporaryFile(delete=False)
-    with open(good_cname.name, 'w') as configfile:
+    with open(good_cname.name, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
     # Simple configuration with good options, without contacts field
@@ -98,7 +99,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     config.remove_option("acmednstiny", "Contacts")
 
     good_cname_without_contacts = NamedTemporaryFile(delete=False)
-    with open(good_cname_without_contacts.name, 'w') as configfile:
+    with open(good_cname_without_contacts.name, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
     # Simple configuration without CSR in configuration (will be passed as argument)
@@ -108,7 +109,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     config.remove_option("acmednstiny", "CSRFile")
 
     good_cname_without_csr = NamedTemporaryFile(delete=False)
-    with open(good_cname_without_csr.name, 'w') as configfile:
+    with open(good_cname_without_csr.name, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
     # Configuration with CSR containing a wildcard domain
@@ -116,7 +117,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
 
     if IS_PEBBLE:  # Pebble server enforces usage of SAN instead of CN
         san_conf = NamedTemporaryFile(delete=False)
-        with open("/etc/ssl/openssl.cnf", 'r') as opensslcnf:
+        with open("/etc/ssl/openssl.cnf", 'r', encoding='utf-8') as opensslcnf:
             san_conf.write(opensslcnf.read().encode("utf8"))
         san_conf.write("\n[SAN]\nsubjectAltName=DNS:*.{0}\n".format(DOMAIN).encode("utf8"))
         san_conf.seek(0)
@@ -130,14 +131,14 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     os.remove(domain_key)
 
     wild_cname = NamedTemporaryFile(delete=False)
-    with open(wild_cname.name, 'w') as configfile:
+    with open(wild_cname.name, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
     # Configuration with CSR using subject alt-name domain instead of CN (common name)
     _, domain_key, domain_csr, config = generate_config(account_key)
 
     san_conf = NamedTemporaryFile(delete=False)
-    with open("/etc/ssl/openssl.cnf", 'r') as opensslcnf:
+    with open("/etc/ssl/openssl.cnf", 'r', encoding='utf-8') as opensslcnf:
         san_conf.write(opensslcnf.read().encode("utf8"))
     san_conf.write("\n[SAN]\nsubjectAltName=DNS:{0},DNS:www.{0}\n".format(DOMAIN).encode("utf8"))
     san_conf.seek(0)
@@ -148,14 +149,14 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     os.remove(domain_key)
 
     good_san = NamedTemporaryFile(delete=False)
-    with open(good_san.name, 'w') as configfile:
+    with open(good_san.name, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
     # Configuration with CSR containing a wildcard domain inside subjetcAltName
     _, domain_key, domain_csr, config = generate_config(account_key)
 
     wild_san_conf = NamedTemporaryFile(delete=False)
-    with open("/etc/ssl/openssl.cnf", 'r') as opensslcnf:
+    with open("/etc/ssl/openssl.cnf", 'r', encoding='utf-8') as opensslcnf:
         wild_san_conf.write(opensslcnf.read().encode("utf8"))
     wild_san_conf.write("\n[SAN]\nsubjectAltName=DNS:{0},DNS:*.{0}\n"
                         .format(DOMAIN).encode("utf8"))
@@ -167,7 +168,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     os.remove(domain_key)
 
     wild_san = NamedTemporaryFile(delete=False)
-    with open(wild_san.name, 'w') as configfile:
+    with open(wild_san.name, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
     # Invalid TSIG key name
@@ -177,7 +178,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     config["TSIGKeyring"]["KeyName"] = "{0}.invalid".format(TSIGKEYNAME)
 
     invalid_tsig_name = NamedTemporaryFile(delete=False)
-    with open(invalid_tsig_name.name, 'w') as configfile:
+    with open(invalid_tsig_name.name, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
     return {
@@ -205,7 +206,7 @@ def generate_acme_account_rollover_config():
     Popen(["openssl", "genrsa", "-out", new_account_key.name, "2048"]).wait()
 
     rollover_account = NamedTemporaryFile(delete=False)
-    with open(rollover_account.name, 'w') as configfile:
+    with open(rollover_account.name, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
     return {
@@ -223,7 +224,7 @@ def generate_acme_account_deactivate_config():
     os.remove(domain_key)
 
     deactivate_account = NamedTemporaryFile(delete=False)
-    with open(deactivate_account.name, 'w') as configfile:
+    with open(deactivate_account.name, 'w', encoding='utf-8') as configfile:
         config.write(configfile)
 
     return {
