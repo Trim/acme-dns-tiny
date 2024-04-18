@@ -62,7 +62,7 @@ def account_deactivate(accountkeypath, acme_directory, timeout, log=LOGGER):
             'Content-Type': 'application/jose+json'
         }
         try:
-            response = requests.post(url, json=jose, headers=joseheaders)
+            response = requests.post(url, json=jose, headers=joseheaders, timeout=timeout)
         except requests.exceptions.RequestException as error:
             response = error.response
         if response:
