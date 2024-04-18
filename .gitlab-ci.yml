@@ -97,21 +97,31 @@ compile:
 
 lint:
   extends: .check-common
-  script:
-    - pylint acme_dns_tiny.py
-    - pylint tools/acme_account_deactivate.py
-    - pylint tools/acme_account_rollover.py
-    - pylint tests/config_factory.py
-    - pylint tests/staging_test_acme_dns_tiny.py
-    - pylint --disable=W0702 tests/unit_test_acme_dns_tiny.py
-    - pylint tests/staging_test_acme_account_deactivate.py
-    - pylint tests/staging_test_acme_account_rollover.py
+  script: |
+    #!/usr/bin/env bash
+
+    set -euxo pipefail
+    IFS=$'\n\t'
+
+    pylint acme_dns_tiny.py
+    pylint tools/acme_account_deactivate.py
+    pylint tools/acme_account_rollover.py
+    pylint tests/config_factory.py
+    pylint tests/staging_test_acme_dns_tiny.py
+    pylint --disable=W0702 tests/unit_test_acme_dns_tiny.py
+    pylint tests/staging_test_acme_account_deactivate.py
+    pylint tests/staging_test_acme_account_rollover.py
 
 pep8:
   extends: .check-common
-  script:
-    - pycodestyle --max-line-length=99 --ignore=E401,W503 --exclude=tests .
-    - pycodestyle --max-line-length=99 --ignore=E722 tests
+  script: |
+    #!/usr/bin/env bash
+
+    set -euxo pipefail
+    IFS=$'\n\t'
+
+    pycodestyle --max-line-length=99 --ignore=E401,W503 --exclude=tests .
+    pycodestyle --max-line-length=99 --ignore=E722 tests
 
 yamllint:
   extends: .check
@@ -127,9 +137,20 @@ yamllint:
 
 .unit_test-common:
   extends: .unit_test
-  script:
-    - python3-coverage run --append --source ./ -m unittest -v
-      tests.unit_test_acme_dns_tiny
+  variables:
+    RUN_WITH_COVERAGE: "false"
+  script: |
+    #!/usr/bin/env bash
+
+    set -euxo pipefail
+    IFS=$'\n\t'
+
+    if [ "${RUN_WITH_COVERAGE:-}" = "true" ] ; then
+      python3-coverage run --append --source ./ -m unittest -v \
+        tests.unit_test_acme_dns_tiny
+    else
+      python3 -m unittest -v tests.unit_test_acme_dns_tiny
+    fi
 
 buster-ut:
   extends: .unit_test-common
@@ -142,6 +163,8 @@ bullseye-ut:
 bookworm-ut:
   extends: .unit_test-common
   image: acme-dns-tiny:bookworm-slim
+  variables:
+    RUN_WITH_COVERAGE: "true"
   artifacts:
     paths:
       - .coverage
@@ -161,15 +184,28 @@ bookworm-ut:
     # Never reuse already validated authorizations, so tests always have to
     # validate challenges
     PEBBLE_AUTHZREUSE: 0
+    RUN_WITH_COVERAGE: "false"
   services:
     - name: letsencrypt/pebble:latest
       command: ["pebble", "-strict", "false"]
       alias: pebble
-  script:
-    - python3-coverage run --append --source ./ -m unittest -v
-      tests.staging_test_acme_dns_tiny
-      tests.staging_test_acme_account_rollover
-      tests.staging_test_acme_account_deactivate
+  script: |
+    #!/usr/bin/env bash
+
+    set -euxo pipefail
+    IFS=$'\n\t'
+
+    if [ "${RUN_WITH_COVERAGE:-}" = "true" ] ; then
+      python3-coverage run --append --source ./ -m unittest -v \
+        tests.staging_test_acme_dns_tiny \
+        tests.staging_test_acme_account_rollover \
+        tests.staging_test_acme_account_deactivate
+    else
+      python3 -m unittest -v \
+        tests.staging_test_acme_dns_tiny \
+        tests.staging_test_acme_account_rollover \
+        tests.staging_test_acme_account_deactivate
+    fi
 
 buster-pebble:
   extends: .pebble_strict_common
@@ -182,11 +218,18 @@ bullseye-pebble:
 bookworm-pebble:
   extends: .pebble_strict_common
   image: acme-dns-tiny:bookworm-slim
-  after_script:
-    - python3-coverage report
+  variables:
+    RUN_WITH_COVERAGE: "true"
+  after_script: |
+    #!/usr/bin/env bash
+
+    set -euxo pipefail
+    IFS=$'\n\t'
+
+    python3-coverage report \
       --include=acme_dns_tiny.py,tools/acme_account_rollover.py,tools/acme_account_deactivate.py
-    - python3-coverage html
-    - python3-coverage xml
+    python3-coverage html
+    python3-coverage xml
   coverage: '/^TOTAL.+\s+(\d+(?:\.\d+)?)%$/'
   artifacts:
     reports:
