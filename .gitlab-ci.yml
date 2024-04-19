@@ -58,14 +58,6 @@ stages:
     DOCKER_DRIVER: overlay2
     DOCKER_BUILDKIT: 1
 
-buster-slim:
-  extends: .build-common
-  script:
-    - docker build
-      --progress plain
-      -t "acme-dns-tiny:buster-slim"
-      -f "docker/buster/Dockerfile" .
-
 bullseye-slim:
   extends: .build-common
   script:
@@ -81,6 +73,14 @@ bookworm-slim:
       --progress plain
       -t "acme-dns-tiny:bookworm-slim"
       -f "docker/bookworm/Dockerfile" .
+
+trixie-slim:
+  extends: .build-common
+  script:
+    - docker build
+      --progress plain
+      -t "acme-dns-tiny:trixie-slim"
+      -f "docker/bullseye/Dockerfile" .
 
 ###
 ### Stage: check
@@ -152,10 +152,6 @@ yamllint:
       python3 -m unittest -v tests.unit_test_acme_dns_tiny
     fi
 
-buster-ut:
-  extends: .unit_test-common
-  image: acme-dns-tiny:buster-slim
-
 bullseye-ut:
   extends: .unit_test-common
   image: acme-dns-tiny:bullseye-slim
@@ -168,6 +164,10 @@ bookworm-ut:
   artifacts:
     paths:
       - .coverage
+
+trixie-ut:
+  extends: .unit_test-common
+  image: acme-dns-tiny:trixie-slim
 
 ###
 ### Stage: pebble strict
@@ -207,10 +207,6 @@ bookworm-ut:
         tests.staging_test_acme_account_deactivate
     fi
 
-buster-pebble:
-  extends: .pebble_strict_common
-  image: acme-dns-tiny:buster-slim
-
 bullseye-pebble:
   extends: .pebble_strict_common
   image: acme-dns-tiny:bullseye-slim
@@ -238,6 +234,10 @@ bookworm-pebble:
         path: coverage.xml
     paths:
       - htmlcov
+
+trixie-pebble:
+  extends: .pebble_strict_common
+  image: acme-dns-tiny:trixie-slim
 
 ###
 ### Stage: pebble breaking changes allow to detect future change breaks
