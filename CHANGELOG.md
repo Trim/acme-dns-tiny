@@ -1,3 +1,28 @@
+# [v4.0](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v4.0) 2024-05-01
+
+*BREAKING CHANGES*
+  * replace deprecated DNS library calls (requires dnspython >= 2.0)
+  * needs python 3.9 to use the dictionary union operator
+  * explicitly disable the DNS suffix search list
+
+Older versions of dnspython (<2.0) followed locally configured DNS suffix search list.
+Although, as the ACME server does not know this list, this feature could not be used before
+in practice. Normally, this breaking change should not impact users.
+
+I'd like to thank kinkie for the [pull request #7](https://github.com/Trim/acme-dns-tiny/pull/7) on
+Github which removed the deprecated DNS library calls.
+
+Fixes:
+  * tools: acme_account_deactivate add missing timeout for one post request
+
+Other changes:
+  * update gitlab domain name for adorsaz.ch
+  * gitlab-ci: remove Strech build and adds Bookworm one
+  * update code style
+  * tests: config_factory sets explicit encoding and disable the "using-with" recommendation
+  * gitlab-ci: coverage only on Debian stable and use yaml multi-line style for scripts
+  * gitlab-ci: replace stages for Debian oldoldstable by testing
+
 # [v3.0](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v3.0) 2022-08-10
 
 This new major version will *require you update your configuration file* to work.

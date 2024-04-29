@@ -127,7 +127,7 @@ def get_crt(config, log=LOGGER):
     # main code
     acme_timeout = config["acmednstiny"].getint("Timeout") or None
     dns_timeout = config["DNS"].getint("Timeout") or None
-    adt_headers = {'User-Agent': 'acme-dns-tiny/3.0',
+    adt_headers = {'User-Agent': 'acme-dns-tiny/4.0',
                    'Accept-Language': config["acmednstiny"]["Language"]}
     nonce = None
 

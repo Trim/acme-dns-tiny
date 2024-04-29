@@ -108,7 +108,7 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, tim
             raise RuntimeError("Unable to get response from ACME server.")
 
     # main code
-    adt_headers = {'User-Agent': 'acme-dns-tiny/3.0'}
+    adt_headers = {'User-Agent': 'acme-dns-tiny/4.0'}
     nonce = None
 
     log.info("Fetch informations from the ACME directory.")

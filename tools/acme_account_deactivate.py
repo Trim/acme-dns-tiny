@@ -72,7 +72,7 @@ def account_deactivate(accountkeypath, acme_directory, timeout, log=LOGGER):
             raise RuntimeError("Unable to get response from ACME server.")
 
     # main code
-    adt_headers = {'User-Agent': 'acme-dns-tiny/3.0'}
+    adt_headers = {'User-Agent': 'acme-dns-tiny/4.0'}
     nonce = None
 
     log.info("Fetch informations from the ACME directory.")

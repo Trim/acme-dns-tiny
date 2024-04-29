@@ -101,7 +101,8 @@ If you use BIND9 as DNS server, you can read the step by step example on [the bi
 
 The configuration of the script will need:
 * the TSIG key name and value
-* the algorithm used for TSIG key (hmac-md5, hmac-sha1, hmac-sha224, hmac-sha256, hmac-sha384 or hmac-512; list of algoithm depends on [known ones](http://www.dnspython.org/docs/1.14.0/dns.tsig-module.html#_hashes) by dnspython module)
+* the algorithm used for TSIG key (hmac-md5, hmac-sha1, hmac-sha224, hmac-sha256, hmac-sha384 or hmac-512; list of
+  algoithm depends on [known ones](https://github.com/rthalley/dnspython/blob/2.6/dns/tsig.py#L165) by dnspython module)
 * the DNS zone to update
 * the address and the port of the DNS server
 
