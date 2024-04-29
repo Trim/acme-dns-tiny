@@ -43,7 +43,7 @@ def account_deactivate(accountkeypath, acme_directory, timeout, log=LOGGER):
             payload64 = _b64(json.dumps(payload).encode("utf8"))
         protected = copy.deepcopy(private_acme_signature)
         protected["nonce"] = nonce or requests.get(
-            acme_config["newNonce"], headers=adtheaders, timeout=timeout).headers['Replay-Nonce']
+            acme_config["newNonce"], headers=adt_headers, timeout=timeout).headers['Replay-Nonce']
         del nonce
         protected["url"] = url
         if url == acme_config["newAccount"]:
@@ -57,12 +57,9 @@ def account_deactivate(accountkeypath, acme_directory, timeout, log=LOGGER):
         jose = {
             "protected": protected64, "payload": payload64, "signature": _b64(signature)
         }
-        joseheaders = {
-            'User-Agent': adtheaders.get('User-Agent'),
-            'Content-Type': 'application/jose+json'
-        }
+        jose_headers = {'Content-Type': 'application/jose+json'} | adt_headers
         try:
-            response = requests.post(url, json=jose, headers=joseheaders, timeout=timeout)
+            response = requests.post(url, json=jose, headers=jose_headers, timeout=timeout)
         except requests.exceptions.RequestException as error:
             response = error.response
         if response:
@@ -75,11 +72,11 @@ def account_deactivate(accountkeypath, acme_directory, timeout, log=LOGGER):
             raise RuntimeError("Unable to get response from ACME server.")
 
     # main code
-    adtheaders = {'User-Agent': 'acme-dns-tiny/3.0'}
+    adt_headers = {'User-Agent': 'acme-dns-tiny/3.0'}
     nonce = None
 
     log.info("Fetch informations from the ACME directory.")
-    acme_config = requests.get(acme_directory, headers=adtheaders, timeout=timeout).json()
+    acme_config = requests.get(acme_directory, headers=adt_headers, timeout=timeout).json()
 
     log.info("Get private signature from account key.")
     accountkey = _openssl("rsa", ["-in", accountkeypath, "-noout", "-text"])

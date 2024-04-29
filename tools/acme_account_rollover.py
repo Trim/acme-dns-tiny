@@ -78,7 +78,7 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, tim
             protected["nonce"] = (nonce
                                   or requests.get(
                                       acme_config["newNonce"],
-                                      headers=adtheaders,
+                                      headers=adt_headers,
                                       timeout=timeout)
                                   .headers['Replay-Nonce'])
         protected["url"] = url
@@ -93,12 +93,9 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, tim
         """Sends signed requests to ACME server."""
         nonlocal nonce
         jose = _sign_request(url, keypath, payload)
-        joseheaders = {
-            'User-Agent': adtheaders.get('User-Agent'),
-            'Content-Type': 'application/jose+json'
-        }
+        jose_headers = {'Content-Type': 'application/jose+json'} | adt_headers
         try:
-            response = requests.post(url, json=jose, headers=joseheaders, timeout=timeout)
+            response = requests.post(url, json=jose, headers=jose_headers, timeout=timeout)
         except requests.exceptions.RequestException as error:
             response = error.response
         if response:
@@ -111,11 +108,11 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, tim
             raise RuntimeError("Unable to get response from ACME server.")
 
     # main code
-    adtheaders = {'User-Agent': 'acme-dns-tiny/3.0'}
+    adt_headers = {'User-Agent': 'acme-dns-tiny/3.0'}
     nonce = None
 
     log.info("Fetch informations from the ACME directory.")
-    acme_config = requests.get(acme_directory, headers=adtheaders, timeout=timeout).json()
+    acme_config = requests.get(acme_directory, headers=adt_headers, timeout=timeout).json()
 
     log.info("Get private signature from old account key.")
     private_acme_old_signature = _get_private_acme_signature(old_accountkeypath)

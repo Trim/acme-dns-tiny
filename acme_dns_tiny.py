@@ -94,7 +94,7 @@ def get_crt(config, log=LOGGER):
         else:
             payload64 = _base64(json.dumps(payload).encode("utf8"))
         protected = copy.deepcopy(private_acme_signature)
-        protected["nonce"] = nonce or requests.get(acme_config["newNonce"], headers=adtheaders,
+        protected["nonce"] = nonce or requests.get(acme_config["newNonce"], headers=adt_headers,
                                                    timeout=acme_timeout).headers['Replay-Nonce']
         del nonce
         protected["url"] = url
@@ -109,11 +109,10 @@ def get_crt(config, log=LOGGER):
         jose = {
             "protected": protected64, "payload": payload64, "signature": _base64(signature)
         }
-        joseheaders = {'Content-Type': 'application/jose+json'}
-        joseheaders.update(adtheaders)
-        joseheaders.update(extra_headers or {})
+        jose_headers = {
+            'Content-Type': 'application/jose+json'} | adt_headers | (extra_headers or {})
         try:
-            response = requests.post(url, json=jose, headers=joseheaders, timeout=acme_timeout)
+            response = requests.post(url, json=jose, headers=jose_headers, timeout=acme_timeout)
         except requests.exceptions.RequestException as error:
             response = error.response
         if response:
@@ -128,8 +127,8 @@ def get_crt(config, log=LOGGER):
     # main code
     acme_timeout = config["acmednstiny"].getint("Timeout") or None
     dns_timeout = config["DNS"].getint("Timeout") or None
-    adtheaders = {'User-Agent': 'acme-dns-tiny/3.0',
-                  'Accept-Language': config["acmednstiny"]["Language"]}
+    adt_headers = {'User-Agent': 'acme-dns-tiny/3.0',
+                   'Accept-Language': config["acmednstiny"]["Language"]}
     nonce = None
 
     log.info("Find domains to validate from the Certificate Signing Request (CSR) file.")
@@ -187,7 +186,7 @@ def get_crt(config, log=LOGGER):
     jwk_thumbprint = _base64(hashlib.sha256(private_jwk.encode("utf8")).digest())
 
     log.info("Fetch ACME server configuration from its directory URL.")
-    acme_config = requests.get(config["acmednstiny"]["ACMEDirectory"], headers=adtheaders,
+    acme_config = requests.get(config["acmednstiny"]["ACMEDirectory"], headers=adt_headers,
                                timeout=acme_timeout).json()
     terms_service = acme_config.get("meta", {}).get("termsOfService", "")
 
