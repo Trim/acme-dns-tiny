@@ -80,7 +80,7 @@ trixie-slim:
     - docker build
       --progress plain
       -t "acme-dns-tiny:trixie-slim"
-      -f "docker/bullseye/Dockerfile" .
+      -f "docker/trixie/Dockerfile" .
 
 ###
 ### Stage: check
