@@ -7,8 +7,7 @@ stages:
   - build
   - check
   - unit_test
-  - pebble_strict
-  - pebble_breaking
+  - pebble
   - lets_encrypt_staging
 
 .build:
@@ -29,14 +28,8 @@ stages:
     - merge_requests
     - main
 
-.pebble_strict:
-  stage: pebble_strict
-  only:
-    - merge_requests
-    - main
-
-.pebble_breaking:
-  stage: pebble_breaking
+.pebble:
+  stage: pebble
   only:
     - merge_requests
     - main
@@ -51,35 +44,28 @@ stages:
 ### Stage: build
 ###
 
-.build-common:
+build:
   extends: .build
   image: docker:stable
   variables:
     DOCKER_DRIVER: overlay2
     DOCKER_BUILDKIT: 1
+  script: |
+    #!/usr/bin/env bash
 
-bullseye-slim:
-  extends: .build-common
-  script:
-    - docker build
-      --progress plain
-      -t "acme-dns-tiny:bullseye-slim"
+    set -euxo pipefail
+    IFS=$'\n\t'
+
+    docker build --progress plain \
+      -t "acme-dns-tiny:bullseye-slim" \
       -f "docker/bullseye/Dockerfile" .
 
-bookworm-slim:
-  extends: .build-common
-  script:
-    - docker build
-      --progress plain
-      -t "acme-dns-tiny:bookworm-slim"
+    docker build --progress plain \
+      -t "acme-dns-tiny:bookworm-slim" \
       -f "docker/bookworm/Dockerfile" .
 
-trixie-slim:
-  extends: .build-common
-  script:
-    - docker build
-      --progress plain
-      -t "acme-dns-tiny:trixie-slim"
+    docker build --progress plain \
+      -t "acme-dns-tiny:trixie-slim" \
       -f "docker/trixie/Dockerfile" .
 
 ###
@@ -89,6 +75,8 @@ trixie-slim:
 .check-common:
   extends: .check
   image: acme-dns-tiny:bookworm-slim
+  needs:
+    - build
 
 compile:
   extends: .check-common
@@ -137,6 +125,8 @@ yamllint:
 
 .unit_test-common:
   extends: .unit_test
+  needs:
+    - compile
   variables:
     RUN_WITH_COVERAGE: "false"
   script: |
@@ -170,11 +160,13 @@ trixie-ut:
   image: acme-dns-tiny:trixie-slim
 
 ###
-### Stage: pebble strict
+### Stage: pebble (ACME server implementation for testing purpose)
 ###
 
-.pebble_strict_common:
-  extends: .pebble_strict
+.pebble_common:
+  extends: .pebble
+  needs:
+    - compile
   variables:
     GITLABCI_ACMEDIRECTORY_V2: https://pebble:14000/dir
     REQUESTS_CA_BUNDLE: "./tests/pebble.pem"
@@ -208,11 +200,14 @@ trixie-ut:
     fi
 
 bullseye-pebble:
-  extends: .pebble_strict_common
+  extends: .pebble_common
   image: acme-dns-tiny:bullseye-slim
 
 bookworm-pebble:
-  extends: .pebble_strict_common
+  extends: .pebble_common
+  needs:
+    # to be able to merge coverage results, only run after bookworm-ut
+    - bookworm-ut
   image: acme-dns-tiny:bookworm-slim
   variables:
     RUN_WITH_COVERAGE: "true"
@@ -236,26 +231,18 @@ bookworm-pebble:
       - htmlcov
 
 trixie-pebble:
-  extends: .pebble_strict_common
+  extends: .pebble_common
   image: acme-dns-tiny:trixie-slim
 
-###
-### Stage: pebble breaking changes allow to detect future change breaks
-###
-
-.pebble_breaking_common:
-  extends:
-    - .pebble_strict_common
-    - .pebble_breaking
+# job run pebble with breaking changes allow to detect future change breaks
+bookworm_pebble_breaking:
+  extends: .pebble_common
+  image: acme-dns-tiny:bookworm-slim
   services:
     - name: letsencrypt/pebble:latest
       command: ["pebble", "-strict", "true"]
       alias: pebble
   allow_failure: true
-
-bookworm_pebble_breaking:
-  extends: .pebble_breaking_common
-  image: acme-dns-tiny:bookworm-slim
 
 ###
 ### Stage: Let's Encrypt staging
@@ -263,6 +250,8 @@ bookworm_pebble_breaking:
 
 .lets_encrypt_staging_common:
   extends: .lets_encrypt_staging
+  needs:
+    - compile
   script:
     - python3-coverage run --append --source ./ -m unittest -v
       tests.staging_test_acme_dns_tiny
