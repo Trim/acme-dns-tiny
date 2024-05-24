@@ -1,4 +1,4 @@
-# [v4.0](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v4.0) 2024-05-01
+# [v4.0](https://gitlab.adorsaz.ch/adrien/acme-dns-tiny/-/tags/v4.0) 2024-05-24
 
 *BREAKING CHANGES*
   * replace deprecated DNS library calls (requires dnspython >= 2.0)
