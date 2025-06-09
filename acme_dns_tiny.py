@@ -215,7 +215,7 @@ def get_crt(config, log=LOGGER):
 
     log.info("Update contact information if needed.")
     if ("contact" in account_request
-            and set(account_request["contact"]) != set(account_info["contact"])):
+            and set(account_request["contact"]) != set(account_info.get("contact", ""))):
         http_response, result = _send_signed_request(private_acme_signature["kid"],
                                                      account_request)
         if http_response.status_code == 200:
