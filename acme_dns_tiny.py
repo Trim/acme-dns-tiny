@@ -4,7 +4,7 @@
 import argparse, base64, binascii, configparser, copy, hashlib, json, logging
 import re, sys, subprocess, time
 import requests
-import dns.exception, dns.query, dns.name, dns.resolver, dns.rrset, dns.tsigkeyring, dns.update
+import dns.exception, dns.query, dns.name, dns.rcode, dns.resolver, dns.rrset, dns.tsigkeyring, dns.update
 
 LOGGER = logging.getLogger('acme_dns_tiny')
 LOGGER.addHandler(logging.StreamHandler())
@@ -75,6 +75,11 @@ def get_crt(config, log=LOGGER):
         for nameserver in _get_authoritative_server_ips(dns_zone, resolver):
             try:
                 response = dns.query.tcp(dns_update, nameserver, timeout=dns_timeout)
+                if response.rcode() != dns.rcode.NOERROR:
+                    log.debug("Unable to %s DNS resource on dns main server with IP %s, try again "
+                              "with next available dns main server IP. Received rcode %s", action,
+                              nameserver, dns.rcode.to_text(response.rcode(), tsig=True))
+                    response = None
             # pylint: disable=broad-except
             except Exception as exception:
                 log.debug("Unable to %s DNS resource on dns main server with IP %s, try again "
