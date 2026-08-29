@@ -11,7 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project formats release number respecting the [semantic
 versioning](https://semver.org/) since version v4.1.0.
 
-Previous versions did not used the patch part.
+Previous versions kept a Changelog with custom formant and the release number
+did not use the patch part defined by the semantic version.
 
 ## [Unreleased]
 
