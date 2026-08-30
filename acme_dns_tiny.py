@@ -76,15 +76,16 @@ def get_crt(config, log=LOGGER):
             try:
                 response = dns.query.tcp(dns_update, nameserver, timeout=dns_timeout)
                 if response.rcode() != dns.rcode.NOERROR:
-                    log.warning("Unable to %s DNS resource on dns main server with IP %s, try again "
-                              "with next available dns main server IP. Received rcode %s", action,
-                              nameserver, dns.rcode.to_text(response.rcode(), tsig=True))
+                    log.warning(f"Unable to {action} DNS resource on dns main server with "
+                                f"IP {nameserver}, try again with next available dns main server "
+                                "IP. Received result (rcode) is : "
+                                f"{dns.rcode.to_text(response.rcode(), tsig=True)}")
                     response = None
             # pylint: disable=broad-except
             except Exception as exception:
-                log.debug("Unable to %s DNS resource on dns main server with IP %s, try again "
-                          "with next available dns main server IP. Error detail: %s", action,
-                          nameserver, exception)
+                log.debug(f"Unable to {action} DNS resource on dns main server with "
+                          f"IP {nameserver}, try again with next available dns main server IP. "
+                          f"Error detail: {exception}")
                 response = None
             if response is not None:
                 break
@@ -199,8 +200,8 @@ def get_crt(config, log=LOGGER):
     account_request = {}
     if terms_service:
         account_request["termsOfServiceAgreed"] = True
-        log.warning(("Terms of service exist and will be automatically agreed if possible, "
-                     "you should read them: %s"), terms_service)
+        log.warning("Terms of service exist and will be automatically agreed if possible, "
+                     f"you should read them: {terms_service}")
     account_request["contact"] = config["acmednstiny"]["Contacts"].split(';')
     if account_request["contact"] == [""]:
         del account_request["contact"]
@@ -208,10 +209,10 @@ def get_crt(config, log=LOGGER):
     http_response, account_info = _send_signed_request(acme_config["newAccount"], account_request)
     if http_response.status_code == 201:
         private_acme_signature["kid"] = http_response.headers['Location']
-        log.info("  - Registered a new account: '%s'", private_acme_signature["kid"])
+        log.info(f"  - Registered a new account: {private_acme_signature['kid']}", )
     elif http_response.status_code == 200:
         private_acme_signature["kid"] = http_response.headers['Location']
-        log.debug("  - Account is already registered: '%s'", private_acme_signature["kid"])
+        log.debug(f"  - Account is already registered: {private_acme_signature['kid']}")
 
         http_response, account_info = _send_signed_request(private_acme_signature["kid"], "")
     else:
@@ -233,7 +234,7 @@ def get_crt(config, log=LOGGER):
     http_response, order = _send_signed_request(acme_config["newOrder"], new_order)
     if http_response.status_code == 201:
         order_location = http_response.headers['Location']
-        log.debug("  - Order received: %s", order_location)
+        log.debug(f"  - Order received: {order_location}")
         if order["status"] != "pending" and order["status"] != "ready":
             raise ValueError(f"Order status is neither pending neither ready, we can't use it: {order}")
     elif (http_response.status_code == 403
@@ -250,7 +251,7 @@ def get_crt(config, log=LOGGER):
             log.info("No challenge to process: order is already ready.")
             break
 
-        log.info("Process challenge for authorization: %s", authz)
+        log.info(f"Process challenge for authorization: {authz}")
         # get new challenge
         http_response, authorization = _send_signed_request(authz, "")
         if http_response.status_code != 200:
@@ -258,7 +259,7 @@ def get_crt(config, log=LOGGER):
         domain = authorization["identifier"]["value"]
 
         if authorization["status"] == "valid":
-            log.info("Skip authorization for domain %s: this is already validated", domain)
+            log.info(f"Skip authorization for domain {domain}: this is already validated")
             continue
         if authorization["status"] != "pending":
             raise ValueError(f"Authorization for the domain {domain} can't be validated: "
@@ -268,7 +269,7 @@ def get_crt(config, log=LOGGER):
         if not challenges:
             raise ValueError(f"Unable to find a DNS challenge to resolve for domain {domain}")
 
-        log.info("Install DNS TXT resource for domain: %s", domain)
+        log.info(f"Install DNS TXT resource for domain: {domain}")
         challenge = challenges[0]
         keyauthorization = challenge["token"] + "." + jwk_thumbprint
         keydigest64 = _base64(hashlib.sha256(keyauthorization.encode("utf8")).digest())
@@ -278,11 +279,12 @@ def get_crt(config, log=LOGGER):
             dnsrr_domain = [response.to_text() for response
                             in resolver.resolve(dnsrr_domain, rdtype="CNAME",
                                                 lifetime=dns_timeout)][0]
-            log.info("  - A CNAME resource has been found for this domain, will install TXT on %s",
-                     dnsrr_domain)
+            log.info(f"  - A CNAME resource has been found for this domain, will install TXT "
+                    f"on {dnsrr_domain}")
         except dns.exception.DNSException as dnsexception:
-            log.debug(("  - No CNAME resource has been found for this domain (%s), will "
-                       "install TXT directly on %s"), type(dnsexception).__name__, dnsrr_domain)
+            log.debug("  - No CNAME resource has been found for this domain "
+                      f"({type(dnsexception).__name__}), will "
+                      f"install TXT directly on {dnsrr_domain}")
         dnsrr_set = dns.rrset.from_text(dnsrr_domain, config["DNS"].getint("TTL"),
                                         "IN", "TXT", f'"{keydigest64}"')
         try:
@@ -291,25 +293,22 @@ def get_crt(config, log=LOGGER):
             raise ValueError("Error updating DNS records: "
                             f"{type(exception).__name__} : {exception}") from exception
 
-        log.info("Wait for 1 TTL (%s seconds) to ensure DNS cache is cleared.",
-                 config["DNS"].getint("TTL"))
+        log.info(f"Wait for 1 TTL ({config['DNS'].getint('TTL')} seconds) to ensure DNS cache is cleared.")
         time.sleep(config["DNS"].getint("TTL"))
         challenge_verified = False
         number_check_fail = 1
         while challenge_verified is False:
             try:
-                log.info(('Self test (try: %s): Check resource with value "%s" exits on '
-                          'nameservers: %s'), number_check_fail, keydigest64,
-                         resolver.nameservers)
+                log.info(f"Self test (try: {number_check_fail}): Check resource with value "
+                         f'"{keydigest64}" exits on nameservers: {resolver.nameservers}')
                 for response in resolver.resolve(dnsrr_domain, rdtype="TXT",
                                                  lifetime=dns_timeout).rrset:
-                    log.debug("  - Found value %s", response.to_text())
+                    log.debug(f"  - Found value {response.to_text()}")
                     challenge_verified = (challenge_verified
                                           or response.to_text() == f'"{keydigest64}"')
             except dns.exception.DNSException as dnsexception:
-                log.info(
-                    "  - Will retry as a DNS error occurred while checking challenge: %s : %s",
-                    type(dnsexception).__name__, dnsexception)
+                log.info(f"  - Will retry as a DNS error occurred while checking challenge: "
+                        f"{type(dnsexception).__name__} : {dnsexception}")
             finally:
                 if challenge_verified is False:
                     if number_check_fail >= 10:
@@ -329,7 +328,7 @@ def get_crt(config, log=LOGGER):
                 if challenge_status["status"] == "pending":
                     time.sleep(2)
                 elif challenge_status["status"] == "valid":
-                    log.info("ACME has verified challenge for domain: %s", domain)
+                    log.info(f"ACME has verified challenge for domain: {domain}")
                     break
                 else:
                     raise ValueError(f"Challenge for domain {domain} did not pass: {challenge_status}")
@@ -365,9 +364,9 @@ def get_crt(config, log=LOGGER):
         raise ValueError(f"Finalizing order {http_response.status_code} got errors: {result}")
 
     if 'link' in http_response.headers:
-        log.info("  - Certificate links given by server: %s", http_response.headers['link'])
+        log.info(f"  - Certificate links given by server: {http_response.headers['link']}")
 
-    log.info("Certificate signed and chain received: %s", order["certificate"])
+    log.info(f"Certificate signed and chain received: {order['certificate']}")
     return http_response.text
 
 
