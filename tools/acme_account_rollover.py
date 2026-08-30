@@ -27,7 +27,7 @@ def _openssl(command, options, communicate=None):
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE) as openssl:
         out, err = openssl.communicate(communicate)
         if openssl.returncode != 0:
-            raise IOError("OpenSSL Error: {0}".format(err))
+            raise IOError(f"OpenSSL Error: {err}")
         return out
 
 
@@ -43,8 +43,8 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, tim
         if signature_search is None:
             raise ValueError("Unable to retrieve private signature.")
         pub_hex, pub_exp = signature_search.groups()
-        pub_exp = "{0:x}".format(int(pub_exp))
-        pub_exp = "0{0}".format(pub_exp) if len(pub_exp) % 2 else pub_exp
+        pub_exp = f"{int(pub_exp):x}"
+        pub_exp = f"0{pub_exp}" if len(pub_exp) % 2 else pub_exp
         return {
             "alg": "RS256",
             "jwk": {
@@ -84,7 +84,7 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, tim
         protected["url"] = url
         protected64 = _b64(json.dumps(protected).encode("utf8"))
         signature = _openssl("dgst", ["-sha256", "-sign", keypath],
-                             "{0}.{1}".format(protected64, payload64).encode("utf8"))
+                             "{protected64}.{payload64}".encode("utf8"))
         return {
             "protected": protected64, "payload": payload64, "signature": _b64(signature)
         }
@@ -127,8 +127,7 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, tim
         private_acme_old_signature["kid"] = http_response.headers["Location"]
         private_acme_new_signature["kid"] = http_response.headers["Location"]
     else:
-        raise ValueError("Error looking or account URL: {0} {1}"
-                         .format(http_response.status_code, result))
+        raise ValueError(f"Error looking or account URL: {http_response.status_code} {result}")
 
     log.info("Rolling over account keys.")
     # The signature by the new key covers the account URL and the old key,
@@ -143,8 +142,7 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, tim
                                                  inner_payload)
 
     if http_response.status_code != 200:
-        raise ValueError("Error rolling over account key: {0} {1}"
-                         .format(http_response.status_code, result))
+        raise ValueError("Error rolling over account key: {http_response.status_code} {result}")
     log.info("Keys rolled over.")
 
 

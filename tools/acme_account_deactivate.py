@@ -26,7 +26,7 @@ def _openssl(command, options, communicate=None):
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE) as openssl:
         out, err = openssl.communicate(communicate)
         if openssl.returncode != 0:
-            raise IOError("OpenSSL Error: {0}".format(err))
+            raise IOError(f"OpenSSL Error: {err}")
         return out
 
 
@@ -53,7 +53,7 @@ def account_deactivate(accountkeypath, acme_directory, timeout, log=LOGGER):
             del protected["jwk"]
         protected64 = _b64(json.dumps(protected).encode("utf8"))
         signature = _openssl("dgst", ["-sha256", "-sign", accountkeypath],
-                             "{0}.{1}".format(protected64, payload64).encode("utf8"))
+                             f"{protected64}.{payload64}".encode("utf8"))
         jose = {
             "protected": protected64, "payload": payload64, "signature": _b64(signature)
         }
@@ -85,8 +85,8 @@ def account_deactivate(accountkeypath, acme_directory, timeout, log=LOGGER):
     if signature_search is None:
         raise ValueError("Unable to retrieve private signature.")
     pub_hex, pub_exp = signature_search.groups()
-    pub_exp = "{0:x}".format(int(pub_exp))
-    pub_exp = "0{0}".format(pub_exp) if len(pub_exp) % 2 else pub_exp
+    pub_exp = f"{int(pub_exp):x}"
+    pub_exp = f"0{pub_exp}" if len(pub_exp) % 2 else pub_exp
     # That signature is used to authenticate with the ACME server, it needs to be safely kept
     private_acme_signature = {
         "alg": "RS256",
@@ -103,8 +103,7 @@ def account_deactivate(accountkeypath, acme_directory, timeout, log=LOGGER):
     if http_response.status_code == 200:
         private_acme_signature["kid"] = http_response.headers['Location']
     else:
-        raise ValueError("Error looking or account URL: {0} {1}"
-                         .format(http_response.status_code, result))
+        raise ValueError(f"Error looking or account URL: {http_response.status_code} {result}")
 
     log.info("Deactivating the account.")
     http_response, result = _send_signed_request(private_acme_signature["kid"],
@@ -113,8 +112,7 @@ def account_deactivate(accountkeypath, acme_directory, timeout, log=LOGGER):
     if http_response.status_code == 200:
         log.info("The account has been deactivated.")
     else:
-        raise ValueError("Error while deactivating the account key: {0} {1}"
-                         .format(http_response.status_code, result))
+        raise ValueError(f"Error while deactivating the account key: {http_response.status_code} {result}")
 
 
 def main(argv):

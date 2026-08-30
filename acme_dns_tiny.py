@@ -22,7 +22,7 @@ def _openssl(command, options, communicate=None):
                           stderr=subprocess.PIPE) as openssl:
         out, err = openssl.communicate(communicate)
         if openssl.returncode != 0:
-            raise IOError("OpenSSL Error: {0}".format(err))
+            raise IOError(f"OpenSSL Error: {err}")
         return out
 
 
@@ -61,7 +61,7 @@ def get_crt(config, log=LOGGER):
 
     def _update_dns(rrset, action, resolver):
         """Updates DNS resource by adding or deleting resource."""
-        algorithm = dns.name.from_text("{0}".format(config["TSIGKeyring"]["Algorithm"].lower()))
+        algorithm = dns.name.from_text(config["TSIGKeyring"]["Algorithm"].lower())
         dns_zone = dns.resolver.zone_for_name(rrset.name, resolver=resolver)
         # Prepare dns update message
         dns_update = dns.update.Update(dns_zone,
@@ -89,7 +89,7 @@ def get_crt(config, log=LOGGER):
             if response is not None:
                 break
         if response is None:
-            raise RuntimeError("Unable to {0} DNS resource to {1}".format(action, rrset.name))
+            raise RuntimeError(f"Unable to {action} DNS resource to {rrset.name}")
 
     def _send_signed_request(url, payload, extra_headers=None):
         """Sends signed requests to ACME server."""
@@ -110,7 +110,7 @@ def get_crt(config, log=LOGGER):
             del protected["jwk"]
         protected64 = _base64(json.dumps(protected).encode("utf8"))
         signature = _openssl("dgst", ["-sha256", "-sign", config["acmednstiny"]["AccountKeyFile"]],
-                             "{0}.{1}".format(protected64, payload64).encode("utf8"))
+                             "{protected64}.{payload64}".encode("utf8"))
         jose = {
             "protected": protected64, "payload": payload64, "signature": _base64(signature)
         }
@@ -176,8 +176,8 @@ def get_crt(config, log=LOGGER):
     if signature_search is None:
         raise ValueError("Unable to retrieve private signature.")
     pub_hex, pub_exp = signature_search.groups()
-    pub_exp = "{0:x}".format(int(pub_exp))
-    pub_exp = "0{0}".format(pub_exp) if len(pub_exp) % 2 else pub_exp
+    pub_exp = f"{int(pub_exp):x}"
+    pub_exp = f"0{pub_exp}" if len(pub_exp) % 2 else pub_exp
     # That signature is used to authenticate with the ACME server, it needs to be safely kept
     private_acme_signature = {
         "alg": "RS256",
@@ -215,8 +215,7 @@ def get_crt(config, log=LOGGER):
 
         http_response, account_info = _send_signed_request(private_acme_signature["kid"], "")
     else:
-        raise ValueError("Error registering account: {0} {1}"
-                         .format(http_response.status_code, account_info))
+        raise ValueError(f"Error registering account: {http_response.status_code} {account_info}")
 
     log.info("Update contact information if needed.")
     if ("contact" in account_request
@@ -226,8 +225,7 @@ def get_crt(config, log=LOGGER):
         if http_response.status_code == 200:
             log.debug("  - Account updated with latest contact informations.")
         else:
-            raise ValueError("Error registering updates for the account: {0} {1}"
-                             .format(http_response.status_code, result))
+            raise ValueError(f"Error registering updates for the account: {http_response.status_code} {result}")
 
     # new order
     log.info("Request to the ACME server an order to validate domains.")
@@ -237,17 +235,14 @@ def get_crt(config, log=LOGGER):
         order_location = http_response.headers['Location']
         log.debug("  - Order received: %s", order_location)
         if order["status"] != "pending" and order["status"] != "ready":
-            raise ValueError("Order status is neither pending neither ready, we can't use it: {0}"
-                             .format(order))
+            raise ValueError(f"Order status is neither pending neither ready, we can't use it: {order}")
     elif (http_response.status_code == 403
           and order["type"] == "urn:ietf:params:acme:error:userActionRequired"):
-        raise ValueError(("Order creation failed ({0}). Read Terms of Service ({1}), then follow "
-                          "your CA instructions: {2}")
-                         .format(order["detail"],
-                                 http_response.headers['Link'], order["instance"]))
+        raise ValueError(f"Order creation failed ({order['detail']}). "
+                            f"Read Terms of Service ({http_response.headers['Link']}), "
+                            f"then follow your CA instructions: {order['instance']}")
     else:
-        raise ValueError("Error getting new Order: {0} {1}"
-                         .format(http_response.status_code, order))
+        raise ValueError(f"Error getting new Order: {http_response.status_code} {order}")
 
     # complete each authorization challenge
     for authz in order["authorizations"]:
@@ -259,26 +254,25 @@ def get_crt(config, log=LOGGER):
         # get new challenge
         http_response, authorization = _send_signed_request(authz, "")
         if http_response.status_code != 200:
-            raise ValueError("Error fetching challenges: {0} {1}"
-                             .format(http_response.status_code, authorization))
+            raise ValueError(f"Error fetching challenges: {http_response.status_code} {authorization}")
         domain = authorization["identifier"]["value"]
 
         if authorization["status"] == "valid":
             log.info("Skip authorization for domain %s: this is already validated", domain)
             continue
         if authorization["status"] != "pending":
-            raise ValueError("Authorization for the domain {0} can't be validated: "
-                             "the authorization is {1}.".format(domain, authorization["status"]))
+            raise ValueError(f"Authorization for the domain {domain} can't be validated: "
+                             f"the authorization is {authorization['status']}.")
 
         challenges = [c for c in authorization["challenges"] if c["type"] == "dns-01"]
         if not challenges:
-            raise ValueError("Unable to find a DNS challenge to resolve for domain {0}"
-                             .format(domain))
+            raise ValueError(f"Unable to find a DNS challenge to resolve for domain {domain}")
+
         log.info("Install DNS TXT resource for domain: %s", domain)
         challenge = challenges[0]
         keyauthorization = challenge["token"] + "." + jwk_thumbprint
         keydigest64 = _base64(hashlib.sha256(keyauthorization.encode("utf8")).digest())
-        dnsrr_domain = "_acme-challenge.{0}.".format(domain)
+        dnsrr_domain = f"_acme-challenge.{domain}."
         try:  # a CNAME resource can be used for advanced TSIG configuration
             # Note: the CNAME target has to be of "non-CNAME" type (recursion isn't managed)
             dnsrr_domain = [response.to_text() for response
@@ -290,12 +284,12 @@ def get_crt(config, log=LOGGER):
             log.debug(("  - No CNAME resource has been found for this domain (%s), will "
                        "install TXT directly on %s"), type(dnsexception).__name__, dnsrr_domain)
         dnsrr_set = dns.rrset.from_text(dnsrr_domain, config["DNS"].getint("TTL"),
-                                        "IN", "TXT", '"{0}"'.format(keydigest64))
+                                        "IN", "TXT", f'"{keydigest64}"')
         try:
             _update_dns(dnsrr_set, "add", resolver)
         except dns.exception.DNSException as exception:
-            raise ValueError("Error updating DNS records: {0} : {1}"
-                             .format(type(exception).__name__, str(exception))) from exception
+            raise ValueError("Error updating DNS records: "
+                            f"{type(exception).__name__} : {exception}") from exception
 
         log.info("Wait for 1 TTL (%s seconds) to ensure DNS cache is cleared.",
                  config["DNS"].getint("TTL"))
@@ -311,7 +305,7 @@ def get_crt(config, log=LOGGER):
                                                  lifetime=dns_timeout).rrset:
                     log.debug("  - Found value %s", response.to_text())
                     challenge_verified = (challenge_verified
-                                          or response.to_text() == '"{0}"'.format(keydigest64))
+                                          or response.to_text() == f'"{keydigest64}"')
             except dns.exception.DNSException as dnsexception:
                 log.info(
                     "  - Will retry as a DNS error occurred while checking challenge: %s : %s",
@@ -319,30 +313,26 @@ def get_crt(config, log=LOGGER):
             finally:
                 if challenge_verified is False:
                     if number_check_fail >= 10:
-                        raise ValueError("Error checking challenge, value not found: {0}"
-                                         .format(keydigest64))
+                        raise ValueError(f"Error checking challenge, value not found: {keydigest64}")
                     number_check_fail = number_check_fail + 1
                     time.sleep(config["DNS"].getint("TTL"))
 
         log.info("Asking ACME server to validate challenge.")
         http_response, result = _send_signed_request(challenge["url"], {})
         if http_response.status_code != 200:
-            raise ValueError("Error triggering challenge: {0} {1}"
-                             .format(http_response.status_code, result))
+            raise ValueError(f"Error triggering challenge: {http_response.status_code} {result}")
         try:
             while True:
                 http_response, challenge_status = _send_signed_request(challenge["url"], "")
                 if http_response.status_code != 200:
-                    raise ValueError("Error during challenge validation: {0} {1}".format(
-                        http_response.status_code, challenge_status))
+                    raise ValueError(f"Error during challenge validation: {http_response.status_code} {challenge_status}")
                 if challenge_status["status"] == "pending":
                     time.sleep(2)
                 elif challenge_status["status"] == "valid":
                     log.info("ACME has verified challenge for domain: %s", domain)
                     break
                 else:
-                    raise ValueError("Challenge for domain {0} did not pass: {1}".format(
-                        domain, challenge_status))
+                    raise ValueError(f"Challenge for domain {domain} did not pass: {challenge_status}")
         finally:
             _update_dns(dnsrr_set, "delete", resolver)
 
@@ -351,8 +341,7 @@ def get_crt(config, log=LOGGER):
                                        "-outform", "DER"]))
     http_response, result = _send_signed_request(order["finalize"], {"csr": csr_der})
     if http_response.status_code != 200:
-        raise ValueError("Error while sending the CSR: {0} {1}"
-                         .format(http_response.status_code, result))
+        raise ValueError(f"Error while sending the CSR: {http_response.status_code} {result}")
 
     while True:
         http_response, order = _send_signed_request(order_location, "")
@@ -366,16 +355,14 @@ def get_crt(config, log=LOGGER):
             log.info("Order finalized!")
             break
         else:
-            raise ValueError("Finalizing order {0} got errors: {1}".format(
-                order_location, order))
+            raise ValueError(f"Finalizing order {order_location} got errors: {order}")
 
     http_response, result = _send_signed_request(
         order["certificate"], "",
         {'Accept': config["acmednstiny"].get("CertificateFormat",
                                              'application/pem-certificate-chain')})
     if http_response.status_code != 200:
-        raise ValueError("Finalizing order {0} got errors: {1}"
-                         .format(http_response.status_code, result))
+        raise ValueError(f"Finalizing order {http_response.status_code} got errors: {result}")
 
     if 'link' in http_response.headers:
         log.info("  - Certificate links given by server: %s", http_response.headers['link'])
