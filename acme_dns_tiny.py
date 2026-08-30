@@ -76,7 +76,7 @@ def get_crt(config, log=LOGGER):
             try:
                 response = dns.query.tcp(dns_update, nameserver, timeout=dns_timeout)
                 if response.rcode() != dns.rcode.NOERROR:
-                    log.debug("Unable to %s DNS resource on dns main server with IP %s, try again "
+                    log.warning("Unable to %s DNS resource on dns main server with IP %s, try again "
                               "with next available dns main server IP. Received rcode %s", action,
                               nameserver, dns.rcode.to_text(response.rcode(), tsig=True))
                     response = None
