@@ -1,0 +1,22 @@
+FROM docker.io/debian:bullseye-slim
+
+RUN <<EOF
+#!/usr/bin/env bash
+
+set -euxo pipefail
+IFS=$'\n\t'
+
+apt-get update
+
+apt-get install -y --no-install-recommends \
+  python3-minimal python3-dnspython python3-requests pylint
+
+apt-get clean
+
+EOF
+
+USER 1000
+
+WORKDIR /acme_dns_tiny
+
+COPY --chown=${USER}:0 . .

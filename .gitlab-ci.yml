@@ -1,4 +1,12 @@
 ---
+
+variables:
+  CONTAINER_REGISTRY: registry.adorsaz.ch/adrien
+
+default:
+  tags:
+    - simple
+
 ###
 ### Pipeline(s) definition (stages and "only" keys)
 ###
@@ -48,39 +56,24 @@ stages:
     - main
 
 ###
-### Stage: build
+### Container images
 ###
 
-.build-common:
-  extends: .build
-  image: docker:stable
-  variables:
-    DOCKER_DRIVER: overlay2
-    DOCKER_BUILDKIT: 1
-
-bullseye-slim:
-  extends: .build-common
-  script:
-    - docker build
-      --progress plain
-      -t "acme-dns-tiny:bullseye-slim"
-      -f "docker/bullseye/Dockerfile" .
-
-bookworm-slim:
-  extends: .build-common
-  script:
-    - docker build
-      --progress plain
-      -t "acme-dns-tiny:bookworm-slim"
-      -f "docker/bookworm/Dockerfile" .
-
-trixie-slim:
-  extends: .build-common
-  script:
-    - docker build
-      --progress plain
-      -t "acme-dns-tiny:trixie-slim"
-      -f "docker/trixie/Dockerfile" .
+# To keep Gitlab runners isolated from host, build needed images on a safe host
+# with rootless podman:
+#   $ export CONTAINER_REGISTRY=registry.adorsaz.ch/adrien
+#   $ podman build -t "${CONTAINER_REGISTRY}/acme-dns-tiny:bullseye-slim" \
+#     -f containers/bullseye/Containerfile
+#   $ podman build -t "${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim" \
+#     -f containers/bookworm/Containerfile
+#   $ podman build -t "${CONTAINER_REGISTRY}/acme-dns-tiny:trixie-slim" \
+#     -f containers/trixie/Containerfile
+#
+# Then login and push on Gitlab registry:
+#   $ podman login "${CONTAINER_REGISTRY}"
+#   $ podman push "${CONTAINER_REGISTRY}/acme-dns-tiny:bullseye-slim"
+#   $ podman push "${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim"
+#   $ podman push "${CONTAINER_REGISTRY}/acme-dns-tiny:trixie-slim"
 
 ###
 ### Stage: check
@@ -88,7 +81,7 @@ trixie-slim:
 
 .check-common:
   extends: .check
-  image: acme-dns-tiny:bookworm-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim
 
 compile:
   extends: .check-common
@@ -154,11 +147,11 @@ yamllint:
 
 bullseye-ut:
   extends: .unit_test-common
-  image: acme-dns-tiny:bullseye-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bullseye-slim
 
 bookworm-ut:
   extends: .unit_test-common
-  image: acme-dns-tiny:bookworm-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim
   variables:
     RUN_WITH_COVERAGE: "true"
   artifacts:
@@ -167,7 +160,7 @@ bookworm-ut:
 
 trixie-ut:
   extends: .unit_test-common
-  image: acme-dns-tiny:trixie-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:trixie-slim
 
 ###
 ### Stage: pebble strict
@@ -186,7 +179,7 @@ trixie-ut:
     PEBBLE_AUTHZREUSE: 0
     RUN_WITH_COVERAGE: "false"
   services:
-    - name: letsencrypt/pebble:latest
+    - name: docker.io/letsencrypt/pebble:latest
       command: ["pebble", "-strict", "false"]
       alias: pebble
   script: |
@@ -209,11 +202,11 @@ trixie-ut:
 
 bullseye-pebble:
   extends: .pebble_strict_common
-  image: acme-dns-tiny:bullseye-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bullseye-slim
 
 bookworm-pebble:
   extends: .pebble_strict_common
-  image: acme-dns-tiny:bookworm-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim
   variables:
     RUN_WITH_COVERAGE: "true"
   after_script: |
@@ -237,7 +230,7 @@ bookworm-pebble:
 
 trixie-pebble:
   extends: .pebble_strict_common
-  image: acme-dns-tiny:trixie-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:trixie-slim
 
 ###
 ### Stage: pebble breaking changes allow to detect future change breaks
@@ -248,14 +241,14 @@ trixie-pebble:
     - .pebble_strict_common
     - .pebble_breaking
   services:
-    - name: letsencrypt/pebble:latest
+    - name: docker.io/letsencrypt/pebble:latest
       command: ["pebble", "-strict", "true"]
       alias: pebble
   allow_failure: true
 
 bookworm_pebble_breaking:
   extends: .pebble_breaking_common
-  image: acme-dns-tiny:bookworm-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim
 
 ###
 ### Stage: Let's Encrypt staging
@@ -271,4 +264,4 @@ bookworm_pebble_breaking:
 
 bookworm-le-staging:
   extends: .lets_encrypt_staging_common
-  image: acme-dns-tiny:bookworm-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim

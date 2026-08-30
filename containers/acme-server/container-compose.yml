@@ -1,7 +1,7 @@
 ---
 services:
   acme-server:
-    image: letsencrypt/pebble:latest
+    image: docker.io/letsencrypt/pebble:latest
     environment:
       PEBBLE_WFE_NONCEREJECT: 0
       PEBBLE_AUTHZREUSE: 0
