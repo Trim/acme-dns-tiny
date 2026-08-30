@@ -21,6 +21,16 @@ did not use the patch part defined by the semantic version.
 - The `contact` information in the configuration file is now optional. This
   is needed to respect the `Account Objects` defined by the ACME
   [RFC 8555](https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.2)
+- After a TSIG command has been sent to the DNS server to add or update a DNS
+  record, acme-dns-tiny checks the response status. If the status raises some
+  error, acme-dns-tiny will try to send the query to the next DNS server
+  available. Thanks to Jeff Dairiki for the issue report and the patch!
+
+### Changed
+
+- String literals use the `f-string` literals instead of `.format()` python
+  method. This eases the read of the code as the variables are directly shown
+  in the right place.
 
 ## [v4.0] - 2024-05-24
 
