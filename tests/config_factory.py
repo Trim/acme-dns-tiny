@@ -35,7 +35,7 @@ def generate_config(account_key_path=None):
         san_conf = NamedTemporaryFile(delete=False)
         with open("/etc/ssl/openssl.cnf", 'r', encoding='utf-8') as opensslcnf:
             san_conf.write(opensslcnf.read().encode("utf8"))
-        san_conf.write("\n[SAN]\nsubjectAltName=DNS:{0}\n".format(DOMAIN).encode("utf8"))
+        san_conf.write(f"\n[SAN]\nsubjectAltName=DNS:{DOMAIN}\n".encode("utf8"))
         san_conf.seek(0)
         Popen(["openssl", "req", "-newkey", "rsa:2048", "-nodes", "-keyout", domain_key.name,
                "-subj", "/", "-reqexts", "SAN", "-config", san_conf.name,
@@ -43,7 +43,7 @@ def generate_config(account_key_path=None):
         os.remove(san_conf.name)
     else:
         Popen(["openssl", "req", "-newkey", "rsa:2048", "-nodes", "-keyout", domain_key.name,
-               "-subj", "/CN={0}".format(DOMAIN), "-out", domain_csr.name]).wait()
+               "-subj", f"/CN={DOMAIN}", "-out", domain_csr.name]).wait()
 
     # acme-dns-tiny configuration
     parser = configparser.ConfigParser()
@@ -52,7 +52,7 @@ def generate_config(account_key_path=None):
     parser["acmednstiny"]["CSRFile"] = domain_csr.name
     parser["acmednstiny"]["ACMEDirectory"] = ACMEDIRECTORY
     if CONTACT:
-        parser["acmednstiny"]["Contacts"] = "mailto:{0}".format(CONTACT)
+        parser["acmednstiny"]["Contacts"] = f"mailto:{CONTACT}"
     elif "Contacts" in parser:
         del parser["acmednstiny"]["Contacts"]
     if ACMETIMEOUT:
@@ -119,7 +119,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
         san_conf = NamedTemporaryFile(delete=False)
         with open("/etc/ssl/openssl.cnf", 'r', encoding='utf-8') as opensslcnf:
             san_conf.write(opensslcnf.read().encode("utf8"))
-        san_conf.write("\n[SAN]\nsubjectAltName=DNS:*.{0}\n".format(DOMAIN).encode("utf8"))
+        san_conf.write(f"\n[SAN]\nsubjectAltName=DNS:*.{DOMAIN}\n".encode("utf8"))
         san_conf.seek(0)
         Popen(["openssl", "req", "-newkey", "rsa:2048", "-nodes", "-keyout", domain_key,
                "-subj", "/", "-reqexts", "SAN", "-config", san_conf.name,
@@ -127,7 +127,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
         os.remove(san_conf.name)
     else:
         Popen(["openssl", "req", "-newkey", "rsa:2048", "-nodes", "-keyout", domain_key,
-               "-subj", "/CN=*.{0}".format(DOMAIN), "-out", domain_csr]).wait()
+               "-subj", f"/CN=*.{DOMAIN}", "-out", domain_csr]).wait()
     os.remove(domain_key)
 
     wild_cname = NamedTemporaryFile(delete=False)
@@ -140,7 +140,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     san_conf = NamedTemporaryFile(delete=False)
     with open("/etc/ssl/openssl.cnf", 'r', encoding='utf-8') as opensslcnf:
         san_conf.write(opensslcnf.read().encode("utf8"))
-    san_conf.write("\n[SAN]\nsubjectAltName=DNS:{0},DNS:www.{0}\n".format(DOMAIN).encode("utf8"))
+    san_conf.write(f"\n[SAN]\nsubjectAltName=DNS:{0},DNS:www.{DOMAIN}\n".encode("utf8"))
     san_conf.seek(0)
     Popen(["openssl", "req", "-new", "-sha256", "-key", domain_key,
            "-subj", "/", "-reqexts", "SAN", "-config", san_conf.name,
@@ -158,8 +158,8 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     wild_san_conf = NamedTemporaryFile(delete=False)
     with open("/etc/ssl/openssl.cnf", 'r', encoding='utf-8') as opensslcnf:
         wild_san_conf.write(opensslcnf.read().encode("utf8"))
-    wild_san_conf.write("\n[SAN]\nsubjectAltName=DNS:{0},DNS:*.{0}\n"
-                        .format(DOMAIN).encode("utf8"))
+    wild_san_conf.write(f"\n[SAN]\nsubjectAltName=DNS:{DOMAIN},DNS:*.{0}\n"
+                        .encode("utf8"))
     wild_san_conf.seek(0)
     Popen(["openssl", "req", "-new", "-sha256", "-key", domain_key,
            "-subj", "/", "-reqexts", "SAN", "-config", wild_san_conf.name,
@@ -175,7 +175,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     _, domain_key, _, config = generate_config(account_key)
     os.remove(domain_key)
 
-    config["TSIGKeyring"]["KeyName"] = "{0}.invalid".format(TSIGKEYNAME)
+    config["TSIGKeyring"]["KeyName"] = f"{TSIGKEYNAME}.invalid"
 
     invalid_tsig_name = NamedTemporaryFile(delete=False)
     with open(invalid_tsig_name.name, 'w', encoding='utf-8') as configfile:

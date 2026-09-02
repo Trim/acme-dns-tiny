@@ -20,8 +20,8 @@ class TestACMEAccountDeactivate(unittest.TestCase):
             acme_dns_tiny.main([cls.configs['config']])
         except ValueError as err:
             if str(err).startswith("Error register"):
-                raise ValueError("Fail test as account has not been registered correctly: {0}"
-                                 .format(err)) from err
+                raise ValueError(f"Fail test as account has not been registered correctly: {err}"
+                                 ) from err
 
         super(TestACMEAccountDeactivate, cls).setUpClass()
 

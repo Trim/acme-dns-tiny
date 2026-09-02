@@ -14,8 +14,8 @@ class TestACMEDNSTiny(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print("Init acme_dns_tiny with python modules:")
-        print("  - python: {0}".format(sys.version))
-        print("  - dns python: {0}".format(dns.version.version))
+        print(f"  - python: {sys.version}")
+        print(f"  - dns python: {dns.version.version}")
         cls.configs = generate_acme_dns_tiny_unit_test_config()
         sys.stdout.flush()
         super(TestACMEDNSTiny, cls).setUpClass()
@@ -29,15 +29,15 @@ class TestACMEDNSTiny(unittest.TestCase):
             parser.read(file)
             try:
                 os.remove(parser["acmednstiny"]["AccountKeyFile"])
-            except:
+            except:  # pylint: disable=bare-except
                 pass
             try:
                 os.remove(parser["acmednstiny"]["CSRFile"])
-            except:
+            except:  # pylint: disable=bare-except
                 pass
             try:
                 os.remove(file)
-            except:
+            except:  # pylint: disable=bare-except
                 pass
         super(TestACMEDNSTiny, cls).tearDownClass()
 

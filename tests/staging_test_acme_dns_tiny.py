@@ -22,7 +22,7 @@ def _openssl(command, options, communicate=None):
                           stderr=subprocess.PIPE) as openssl:
         out, err = openssl.communicate(communicate)
         if openssl.returncode != 0:
-            raise IOError("OpenSSL Error: {0}".format(err))
+            raise IOError(f"OpenSSL Error: {err}")
         return out.decode("utf8")
 
 
@@ -32,8 +32,8 @@ class TestACMEDNSTiny(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         print("Init acme_dns_tiny with python modules:")
-        print("  - python: {0}".format(sys.version))
-        print("  - dns python: {0}".format(dns.version.version))
+        print(f"  - python: {sys.version}")
+        print(f"  - dns python: {dns.version.version}")
         cls.configs = generate_acme_dns_tiny_config()
         sys.stdout.flush()
         super(TestACMEDNSTiny, cls).setUpClass()
@@ -179,8 +179,8 @@ class TestACMEDNSTiny(unittest.TestCase):
     def test_failure_dns_update_tsigkeyname(self):
         """Fail to update DNS records by invalid TSIG Key name."""
         self.assertRaisesRegex(RuntimeError,
-                               "Unable to add DNS resource to _acme-challenge.{0}."
-                               .format(os.getenv("GITLABCI_DOMAIN")),
+                               "Unable to add DNS resource to "
+                               f"_acme-challenge.{os.getenv('GITLABCI_DOMAIN')}.",
                                acme_dns_tiny.main, [self.configs['invalid_tsig_name'],
                                                     "--verbose"])
 

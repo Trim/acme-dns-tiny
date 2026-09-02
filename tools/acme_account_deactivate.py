@@ -112,7 +112,8 @@ def account_deactivate(accountkeypath, acme_directory, timeout, log=LOGGER):
     if http_response.status_code == 200:
         log.info("The account has been deactivated.")
     else:
-        raise ValueError(f"Error while deactivating the account key: {http_response.status_code} {result}")
+        raise ValueError("Error while deactivating the account key: "
+                         f"{http_response.status_code} {result}")
 
 
 def main(argv):

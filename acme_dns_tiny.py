@@ -4,7 +4,8 @@
 import argparse, base64, binascii, configparser, copy, hashlib, json, logging
 import re, sys, subprocess, time
 import requests
-import dns.exception, dns.query, dns.name, dns.rcode, dns.resolver, dns.rrset, dns.tsigkeyring, dns.update
+import dns.exception, dns.query, dns.name, dns.rcode, dns.resolver, dns.rrset
+import dns.tsigkeyring, dns.update
 
 LOGGER = logging.getLogger('acme_dns_tiny')
 LOGGER.addHandler(logging.StreamHandler())
@@ -76,9 +77,9 @@ def get_crt(config, log=LOGGER):
             try:
                 response = dns.query.tcp(dns_update, nameserver, timeout=dns_timeout)
                 if response.rcode() != dns.rcode.NOERROR:
-                    log.warning("Unable to %s DNS resource on dns main server with IP %s, try again "
-                              "with next available dns main server IP. Received rcode %s", action,
-                              nameserver, dns.rcode.to_text(response.rcode(), tsig=True))
+                    log.warning("Unable to %s DNS resource on dns main server with IP %s, try "
+                                "again with next available dns main server IP. Received rcode %s",
+                                action, nameserver, dns.rcode.to_text(response.rcode(), tsig=True))
                     response = None
             # pylint: disable=broad-except
             except Exception as exception:
@@ -225,7 +226,8 @@ def get_crt(config, log=LOGGER):
         if http_response.status_code == 200:
             log.debug("  - Account updated with latest contact informations.")
         else:
-            raise ValueError(f"Error registering updates for the account: {http_response.status_code} {result}")
+            raise ValueError("Error registering updates for the account: "
+                             f"{http_response.status_code} {result}")
 
     # new order
     log.info("Request to the ACME server an order to validate domains.")
@@ -235,12 +237,13 @@ def get_crt(config, log=LOGGER):
         order_location = http_response.headers['Location']
         log.debug("  - Order received: %s", order_location)
         if order["status"] != "pending" and order["status"] != "ready":
-            raise ValueError(f"Order status is neither pending neither ready, we can't use it: {order}")
+            raise ValueError("Order status is neither pending neither ready, we can't use it: "
+                             f"{order}")
     elif (http_response.status_code == 403
           and order["type"] == "urn:ietf:params:acme:error:userActionRequired"):
         raise ValueError(f"Order creation failed ({order['detail']}). "
-                            f"Read Terms of Service ({http_response.headers['Link']}), "
-                            f"then follow your CA instructions: {order['instance']}")
+                         f"Read Terms of Service ({http_response.headers['Link']}), "
+                         f"then follow your CA instructions: {order['instance']}")
     else:
         raise ValueError(f"Error getting new Order: {http_response.status_code} {order}")
 
@@ -254,7 +257,8 @@ def get_crt(config, log=LOGGER):
         # get new challenge
         http_response, authorization = _send_signed_request(authz, "")
         if http_response.status_code != 200:
-            raise ValueError(f"Error fetching challenges: {http_response.status_code} {authorization}")
+            raise ValueError(f"Error fetching challenges: {http_response.status_code} "
+                             "{authorization}")
         domain = authorization["identifier"]["value"]
 
         if authorization["status"] == "valid":
@@ -289,7 +293,7 @@ def get_crt(config, log=LOGGER):
             _update_dns(dnsrr_set, "add", resolver)
         except dns.exception.DNSException as exception:
             raise ValueError("Error updating DNS records: "
-                            f"{type(exception).__name__} : {exception}") from exception
+                             f"{type(exception).__name__}: {exception}") from exception
 
         log.info("Wait for 1 TTL (%s seconds) to ensure DNS cache is cleared.",
                  config["DNS"].getint("TTL"))
@@ -313,7 +317,8 @@ def get_crt(config, log=LOGGER):
             finally:
                 if challenge_verified is False:
                     if number_check_fail >= 10:
-                        raise ValueError(f"Error checking challenge, value not found: {keydigest64}")
+                        raise ValueError("Error checking challenge, value not found: "
+                                         f"{keydigest64}")
                     number_check_fail = number_check_fail + 1
                     time.sleep(config["DNS"].getint("TTL"))
 
@@ -325,14 +330,16 @@ def get_crt(config, log=LOGGER):
             while True:
                 http_response, challenge_status = _send_signed_request(challenge["url"], "")
                 if http_response.status_code != 200:
-                    raise ValueError(f"Error during challenge validation: {http_response.status_code} {challenge_status}")
+                    raise ValueError("Error during challenge validation: "
+                                     f"{http_response.status_code} {challenge_status}")
                 if challenge_status["status"] == "pending":
                     time.sleep(2)
                 elif challenge_status["status"] == "valid":
                     log.info("ACME has verified challenge for domain: %s", domain)
                     break
                 else:
-                    raise ValueError(f"Challenge for domain {domain} did not pass: {challenge_status}")
+                    raise ValueError(f"Challenge for domain {domain} did not pass: "
+                                     f"{challenge_status}")
         finally:
             _update_dns(dnsrr_set, "delete", resolver)
 
