@@ -25,6 +25,12 @@ did not use the patch part defined by the semantic version.
   record, acme-dns-tiny checks the response status. If the status raises some
   error, acme-dns-tiny will try to send the query to the next DNS server
   available. Thanks to Jeff Dairiki for the issue report and the patch!
+- the Gitlab pipeline CI has been updated:
+  - pebble is only available on `ghcr.io` ([github#451](https://github.com/letsencrypt/pebble/issues/451))
+  - the pipeline does not build itself container images for the 3 Debian
+    release. Instead I create these images aside and I publish these on Gitlab
+    manually. This simplify the pipeline and avoid use of capabilities inside
+    the runner.
 
 ### Changed
 
