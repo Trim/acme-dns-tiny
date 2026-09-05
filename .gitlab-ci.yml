@@ -179,8 +179,8 @@ trixie-ut:
     PEBBLE_AUTHZREUSE: 0
     RUN_WITH_COVERAGE: "false"
   services:
-    - name: docker.io/letsencrypt/pebble:latest
-      command: ["pebble", "-strict", "false"]
+    - name: ghcr.io/letsencrypt/pebble
+      command: ["-strict=false"]
       alias: pebble
   script: |
     #!/usr/bin/env bash
@@ -241,8 +241,8 @@ trixie-pebble:
     - .pebble_strict_common
     - .pebble_breaking
   services:
-    - name: docker.io/letsencrypt/pebble:latest
-      command: ["pebble", "-strict", "true"]
+    - name: ghcr.io/letsencrypt/pebble
+      command: ["-strict=true"]
       alias: pebble
   allow_failure: true
 
