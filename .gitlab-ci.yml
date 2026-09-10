@@ -168,20 +168,29 @@ trixie-ut:
 
 .pebble_strict_common:
   extends: .pebble_strict
-  variables:
-    GITLABCI_ACMEDIRECTORY_V2: https://pebble:14000/dir
-    REQUESTS_CA_BUNDLE: "./tests/pebble.pem"
-    # Never reject valid nonce, because, as script is tiny it doesn't manage it
-    # (user can run it again)
-    PEBBLE_WFE_NONCEREJECT: 0
-    # Never reuse already validated authorizations, so tests always have to
-    # validate challenges
-    PEBBLE_AUTHZREUSE: 0
-    RUN_WITH_COVERAGE: "false"
   services:
-    - name: ghcr.io/letsencrypt/pebble
-      command: ["-strict=false"]
+    - &services-pebble
+      name: ghcr.io/letsencrypt/pebble
       alias: pebble
+      command:
+        - "-strict=false"
+        - "-config=/test/config/pebble-config.json"
+      variables:
+        # Never reject valid nonce, because, as script is tiny
+        # it doesn't manage it (user can run it again)
+        PEBBLE_WFE_NONCEREJECT: 0
+        # Never reuse already validated authorizations, so tests always have to
+        # validate challenges
+        PEBBLE_AUTHZREUSE: 0
+        # Cap maximum time to wait for challenge to 1 second to speedup tests
+        PEBBLE_VA_SLEEPTIME: 1
+  variables:
+    # Use the pebble service as ACME service
+    # (pebble service alias doesn't work, so use localhost directly)
+    GITLABCI_ACMEDIRECTORY_V2: https://127.0.0.1:14000/dir
+    # Share with python3 CA root used by pebble to serve HTTPS service
+    REQUESTS_CA_BUNDLE: "./tests/pebble.pem"
+    RUN_WITH_COVERAGE: "false"
   script: |
     #!/usr/bin/env bash
 
@@ -241,9 +250,10 @@ trixie-pebble:
     - .pebble_strict_common
     - .pebble_breaking
   services:
-    - name: ghcr.io/letsencrypt/pebble
-      command: ["-strict=true"]
-      alias: pebble
+    - <<: *services-pebble
+      command:
+        - "-strict=true"
+        - "-config=/test/config/pebble-config.json"
   allow_failure: true
 
 bookworm_pebble_breaking:
