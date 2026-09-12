@@ -173,8 +173,8 @@ trixie-ut:
       name: ghcr.io/letsencrypt/pebble
       alias: pebble
       command:
-        - "-strict=false"
-        - "-config=/test/config/pebble-config.json"
+        - -strict=false
+        - -config=/builds/adrien/acme-dns-tiny/tests/pebble-config-14000.json
       variables:
         # Never reject valid nonce, because, as script is tiny
         # it doesn't manage it (user can run it again)
@@ -184,10 +184,14 @@ trixie-ut:
         PEBBLE_AUTHZREUSE: 0
         # Cap maximum time to wait for challenge to 1 second to speedup tests
         PEBBLE_VA_SLEEPTIME: 1
+        # Gitlab Healthcheck
+        HEALTHCHECK_TCP_PORT: ${SERVICE_PEBBLE_PORT}
   variables:
+    # To run jobs of this stage in parallel, pebble port cannot be shared
+    SERVICE_PEBBLE_PORT: 14000
     # Use the pebble service as ACME service
     # (pebble service alias doesn't work, so use localhost directly)
-    GITLABCI_ACMEDIRECTORY_V2: https://127.0.0.1:14000/dir
+    GITLABCI_ACMEDIRECTORY_V2: https://localhost:${SERVICE_PEBBLE_PORT}/dir
     # Share with python3 CA root used by pebble to serve HTTPS service
     REQUESTS_CA_BUNDLE: "./tests/pebble.pem"
     RUN_WITH_COVERAGE: "false"
@@ -216,7 +220,13 @@ bullseye-pebble:
 bookworm-pebble:
   extends: .pebble_strict_common
   image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim
+  services:
+    - <<: *services-pebble
+      command:
+        - -strict=false
+        - -config=/builds/adrien/acme-dns-tiny/tests/pebble-config-14001.json
   variables:
+    SERVICE_PEBBLE_PORT: 14001
     RUN_WITH_COVERAGE: "true"
   after_script: |
     #!/usr/bin/env bash
@@ -240,6 +250,13 @@ bookworm-pebble:
 trixie-pebble:
   extends: .pebble_strict_common
   image: ${CONTAINER_REGISTRY}/acme-dns-tiny:trixie-slim
+  services:
+    - <<: *services-pebble
+      command:
+        - -strict=false
+        - -config=/builds/adrien/acme-dns-tiny/tests/pebble-config-14002.json
+  variables:
+    SERVICE_PEBBLE_PORT: 14002
 
 ###
 ### Stage: pebble breaking changes allow to detect future change breaks
@@ -253,7 +270,7 @@ trixie-pebble:
     - <<: *services-pebble
       command:
         - "-strict=true"
-        - "-config=/test/config/pebble-config.json"
+        - "-config=/builds/adrien/acme-dns-tiny/tests/pebble-config.json"
   allow_failure: true
 
 bookworm_pebble_breaking:
