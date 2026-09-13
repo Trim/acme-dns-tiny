@@ -10,7 +10,7 @@ DOMAIN = os.getenv("GITLABCI_DOMAIN")
 ACMEDIRECTORY = os.getenv("GITLABCI_ACMEDIRECTORY_V2",
                           "https://acme-staging-v02.api.letsencrypt.org/directory")
 ACMETIMEOUT = os.getenv("GITLABCI_ACMETIMEOUT", "10")
-IS_PEBBLE = ACMEDIRECTORY.startswith('https://pebble')
+IS_PEBBLE = "letsencrypt.org" not in ACMEDIRECTORY
 DNSNAMESERVER = os.getenv("GITLABCI_DNSNAMESERVER", "")
 DNSTTL = os.getenv("GITLABCI_DNSTTL", "10")
 DNSTIMEOUT = os.getenv("GITLABCI_DNSTIMEOUT", "10")
