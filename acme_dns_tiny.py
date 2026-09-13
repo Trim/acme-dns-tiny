@@ -122,8 +122,8 @@ def get_crt(config, log=LOGGER):
             response.raise_for_status()
         except requests.exceptions.RequestException as error:
             log.warning("Unable to send request to %s, with data %s. Exception: %s. "
-                      "Response (status %s): %s ",
-                      url, payload, error, error.response.status_code, error.response.text)
+                        "Response (status %s): %s ",
+                        url, payload, error, error.response.status_code, error.response.text)
             response = error.response
         if response is not None:
             nonce = response.headers['Replay-Nonce']
