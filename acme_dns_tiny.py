@@ -263,7 +263,7 @@ def get_crt(config, log=LOGGER):
         http_response, authorization = _send_signed_request(authz, "")
         if http_response.status_code != 200:
             raise ValueError(f"Error fetching challenges: {http_response.status_code} "
-                             "{authorization}")
+                             f"{authorization}")
         domain = authorization["identifier"]["value"]
 
         if authorization["status"] == "valid":

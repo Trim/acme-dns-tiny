@@ -146,7 +146,7 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, tim
                                                  inner_payload)
 
     if http_response.status_code != 200:
-        raise ValueError("Error rolling over account key: {http_response.status_code} {result}")
+        raise ValueError(f"Error rolling over account key: {http_response.status_code} {result}")
     log.info("Keys rolled over.")
 
 

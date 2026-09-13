@@ -140,7 +140,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     san_conf = NamedTemporaryFile(delete=False)
     with open("/etc/ssl/openssl.cnf", 'r', encoding='utf-8') as opensslcnf:
         san_conf.write(opensslcnf.read().encode("utf8"))
-    san_conf.write(f"\n[SAN]\nsubjectAltName=DNS:{0},DNS:www.{DOMAIN}\n".encode("utf8"))
+    san_conf.write(f"\n[SAN]\nsubjectAltName=DNS:{DOMAIN},DNS:www.{DOMAIN}\n".encode("utf8"))
     san_conf.seek(0)
     Popen(["openssl", "req", "-new", "-sha256", "-key", domain_key,
            "-subj", "/", "-reqexts", "SAN", "-config", san_conf.name,
@@ -158,7 +158,7 @@ def generate_acme_dns_tiny_config():  # pylint: disable=too-many-locals,too-many
     wild_san_conf = NamedTemporaryFile(delete=False)
     with open("/etc/ssl/openssl.cnf", 'r', encoding='utf-8') as opensslcnf:
         wild_san_conf.write(opensslcnf.read().encode("utf8"))
-    wild_san_conf.write(f"\n[SAN]\nsubjectAltName=DNS:{DOMAIN},DNS:*.{0}\n"
+    wild_san_conf.write(f"\n[SAN]\nsubjectAltName=DNS:{DOMAIN},DNS:*.{DOMAIN}\n"
                         .encode("utf8"))
     wild_san_conf.seek(0)
     Popen(["openssl", "req", "-new", "-sha256", "-key", domain_key,
