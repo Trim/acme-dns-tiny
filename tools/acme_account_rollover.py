@@ -98,14 +98,15 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, tim
             response = requests.post(url, json=jose, headers=jose_headers, timeout=timeout)
         except requests.exceptions.RequestException as error:
             response = error.response
-        if response:
+        if response is not None:
             nonce = response.headers['Replay-Nonce']
             try:
                 return response, response.json()
             except ValueError:  # if body is empty or not JSON formatted
                 return response, json.dumps({})
         else:
-            raise RuntimeError("Unable to get response from ACME server.")
+            raise RuntimeError(f"Unable to get response from ACME server at {url}, "
+                               f"with payload: {payload}.")
 
     # main code
     adt_headers = {'User-Agent': 'acme-dns-tiny/4.0'}
