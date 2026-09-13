@@ -111,7 +111,7 @@ def get_crt(config, log=LOGGER):
             del protected["jwk"]
         protected64 = _base64(json.dumps(protected).encode("utf8"))
         signature = _openssl("dgst", ["-sha256", "-sign", config["acmednstiny"]["AccountKeyFile"]],
-                             "{protected64}.{payload64}".encode("utf8"))
+                             f"{protected64}.{payload64}".encode("utf8"))
         jose = {
             "protected": protected64, "payload": payload64, "signature": _base64(signature)
         }

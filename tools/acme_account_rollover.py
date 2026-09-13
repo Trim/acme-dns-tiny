@@ -84,7 +84,7 @@ def account_rollover(old_accountkeypath, new_accountkeypath, acme_directory, tim
         protected["url"] = url
         protected64 = _b64(json.dumps(protected).encode("utf8"))
         signature = _openssl("dgst", ["-sha256", "-sign", keypath],
-                             "{protected64}.{payload64}".encode("utf8"))
+                             f"{protected64}.{payload64}".encode("utf8"))
         return {
             "protected": protected64, "payload": payload64, "signature": _b64(signature)
         }
