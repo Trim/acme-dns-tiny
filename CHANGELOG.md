@@ -18,6 +18,9 @@ did not use the patch part defined by the semantic version.
 
 ### Fixed
 
+- The `challenge` object has a `processing` state which were missing in the
+  `acme-dns-tiny` challenge state machine. It's now taken into account and
+  polling continue while the `challenge` object is in this state.
 - The `contact` information in the configuration file is now optional. This
   is needed to respect the `Account Objects` defined by the ACME
   [RFC 8555](https://datatracker.ietf.org/doc/html/rfc8555#section-7.1.2)

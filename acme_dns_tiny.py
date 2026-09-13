@@ -337,7 +337,7 @@ def get_crt(config, log=LOGGER):
                 if http_response.status_code != 200:
                     raise ValueError("Error during challenge validation: "
                                      f"{http_response.status_code} {challenge_status}")
-                if challenge_status["status"] == "pending":
+                if challenge_status["status"] in ["pending", "processing"]:
                     time.sleep(2)
                 elif challenge_status["status"] == "valid":
                     log.info("ACME has verified challenge for domain: %s", domain)
