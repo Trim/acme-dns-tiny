@@ -119,7 +119,11 @@ def get_crt(config, log=LOGGER):
             'Content-Type': 'application/jose+json'} | adt_headers | (extra_headers or {})
         try:
             response = requests.post(url, json=jose, headers=jose_headers, timeout=acme_timeout)
+            response.raise_for_status()
         except requests.exceptions.RequestException as error:
+            log.debug("Unable to send request to %s, with data %s. Exception: %s. "
+                      "Response (status %s): %s ",
+                      url, payload, error, error.response.status_code, error.response.text)
             response = error.response
         if response:
             nonce = response.headers['Replay-Nonce']
@@ -128,7 +132,8 @@ def get_crt(config, log=LOGGER):
             except ValueError:  # if body is empty or not JSON formatted
                 return response, json.loads("{}")
         else:
-            raise RuntimeError("Unable to get response from ACME server.")
+            raise RuntimeError(f"Unable to get response from ACME server at {url}, "
+                               f"with payload: {payload}")
 
     # main code
     acme_timeout = config["acmednstiny"].getint("Timeout") or None
