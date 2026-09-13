@@ -307,7 +307,7 @@ def get_crt(config, log=LOGGER):
         number_check_fail = 1
         while challenge_verified is False:
             try:
-                log.info(('Self test (try: %s): Check resource with value "%s" exits on '
+                log.info(('Self test (try: %s): Check resource with value "%s" exists on '
                           'nameservers: %s'), number_check_fail, keydigest64,
                          resolver.nameservers)
                 for response in resolver.resolve(dnsrr_domain, rdtype="TXT",
