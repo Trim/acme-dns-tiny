@@ -146,15 +146,15 @@ debian-testing-ut:
 debian-oldstable-ut:
   extends: .unit_test-common
   image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-oldstable-slim
+
+debian-stable-ut:
+  extends: .unit_test-common
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-stable-slim
   variables:
     RUN_WITH_COVERAGE: "true"
   artifacts:
     paths:
       - .coverage
-
-debian-stable-ut:
-  extends: .unit_test-common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-stable-slim
 
 ###
 ### Stage: pebble strict
