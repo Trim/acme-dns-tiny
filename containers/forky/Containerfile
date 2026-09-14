@@ -1,4 +1,4 @@
-FROM docker.io/debian:bullseye-slim
+FROM docker.io/debian:forky-slim
 
 RUN <<EOF
 #!/usr/bin/env bash

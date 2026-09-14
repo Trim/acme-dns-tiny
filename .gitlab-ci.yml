@@ -62,8 +62,8 @@ stages:
 # To keep Gitlab runners isolated from host, build needed images on a safe host
 # with rootless podman:
 #   $ export CONTAINER_REGISTRY=registry.adorsaz.ch/adrien
-#   $ podman build -t "${CONTAINER_REGISTRY}/acme-dns-tiny:bullseye-slim" \
-#     -f containers/bullseye/Containerfile
+#   $ podman build -t "${CONTAINER_REGISTRY}/acme-dns-tiny:forky-slim" \
+#     -f containers/forky/Containerfile
 #   $ podman build -t "${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim" \
 #     -f containers/bookworm/Containerfile
 #   $ podman build -t "${CONTAINER_REGISTRY}/acme-dns-tiny:trixie-slim" \
@@ -71,7 +71,7 @@ stages:
 #
 # Then login and push on Gitlab registry:
 #   $ podman login "${CONTAINER_REGISTRY}"
-#   $ podman push "${CONTAINER_REGISTRY}/acme-dns-tiny:bullseye-slim"
+#   $ podman push "${CONTAINER_REGISTRY}/acme-dns-tiny:forky-slim"
 #   $ podman push "${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim"
 #   $ podman push "${CONTAINER_REGISTRY}/acme-dns-tiny:trixie-slim"
 
@@ -145,9 +145,9 @@ yamllint:
       python3 -m unittest -v tests.unit_test_acme_dns_tiny
     fi
 
-bullseye-ut:
+forky-ut:
   extends: .unit_test-common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bullseye-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:forky-slim
 
 bookworm-ut:
   extends: .unit_test-common
@@ -213,9 +213,9 @@ trixie-ut:
         tests.staging_test_acme_account_deactivate
     fi
 
-bullseye-pebble:
+forky-pebble:
   extends: .pebble_strict_common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bullseye-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:forky-slim
 
 bookworm-pebble:
   extends: .pebble_strict_common

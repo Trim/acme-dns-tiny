@@ -47,6 +47,8 @@ did not use the patch part defined by the semantic version.
   container file and use of generic container file not linked to one specific
   product. To simplify CI, the container build should be done outside of the
   pipeline and the images should be pushed on the Gitlab project registry.
+- Gitlab CI run tests with Debian bookworm (oldstable), trixie (stable) and
+  forky (testing)
 
 ## [v4.0] - 2024-05-24
 
