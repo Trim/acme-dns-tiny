@@ -338,7 +338,10 @@ def get_crt(config, log=LOGGER):
                     raise ValueError("Error during challenge validation: "
                                      f"{http_response.status_code} {challenge_status}")
                 if challenge_status["status"] in ["pending", "processing"]:
-                    time.sleep(2)
+                    try:
+                        time.sleep(float(http_response.headers["Retry-After"]))
+                    except (OverflowError, ValueError, TypeError):
+                        time.sleep(2)
                 elif challenge_status["status"] == "valid":
                     log.info("ACME has verified challenge for domain: %s", domain)
                     break
