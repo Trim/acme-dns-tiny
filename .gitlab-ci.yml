@@ -61,19 +61,13 @@ stages:
 
 # To keep Gitlab runners isolated from host, build needed images on a safe host
 # with rootless podman:
-#   $ export CONTAINER_REGISTRY=registry.adorsaz.ch/adrien
-#   $ podman build -t "${CONTAINER_REGISTRY}/acme-dns-tiny:forky-slim" \
-#     -f containers/forky/Containerfile
-#   $ podman build -t "${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim" \
-#     -f containers/bookworm/Containerfile
-#   $ podman build -t "${CONTAINER_REGISTRY}/acme-dns-tiny:trixie-slim" \
-#     -f containers/trixie/Containerfile
-#
-# Then login and push on Gitlab registry:
+#   $ export CONTAINER_REGISTRY=registry.adorsaz.ch/adrien/acme-dns-tiny
 #   $ podman login "${CONTAINER_REGISTRY}"
-#   $ podman push "${CONTAINER_REGISTRY}/acme-dns-tiny:forky-slim"
-#   $ podman push "${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim"
-#   $ podman push "${CONTAINER_REGISTRY}/acme-dns-tiny:trixie-slim"
+#   $ export DEBIAN_RELEASE=stable # then do for oldstable and testing
+#   $ podman build --build-arg DEBIAN_RELEASE="${DEBIAN_RELEASE}"
+#     -t "${CONTAINER_REGISTRY}:debian-${DEBIAN_RELEASE}-slim" \
+#     -f containers/Containerfile
+#   $ podman push "${CONTAINER_REGISTRY}:debian-${DEBIAN_RELEASE}-slim"
 
 ###
 ### Stage: check
@@ -81,7 +75,7 @@ stages:
 
 .check-common:
   extends: .check
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-oldstable-slim
 
 compile:
   extends: .check-common
@@ -145,22 +139,22 @@ yamllint:
       python3 -m unittest -v tests.unit_test_acme_dns_tiny
     fi
 
-forky-ut:
+debian-testing-ut:
   extends: .unit_test-common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:forky-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-testing-slim
 
-bookworm-ut:
+debian-oldstable-ut:
   extends: .unit_test-common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-oldstable-slim
   variables:
     RUN_WITH_COVERAGE: "true"
   artifacts:
     paths:
       - .coverage
 
-trixie-ut:
+debian-stable-ut:
   extends: .unit_test-common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:trixie-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-stable-slim
 
 ###
 ### Stage: pebble strict
@@ -213,13 +207,13 @@ trixie-ut:
         tests.staging_test_acme_account_deactivate
     fi
 
-forky-pebble:
+debian-testing-pebble:
   extends: .pebble_strict_common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:forky-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-testing-slim
 
-bookworm-pebble:
+debian-oldstable-pebble:
   extends: .pebble_strict_common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-oldstable-slim
   services:
     - <<: *services-pebble
       command:
@@ -247,9 +241,9 @@ bookworm-pebble:
     paths:
       - htmlcov
 
-trixie-pebble:
+debian-stable-pebble:
   extends: .pebble_strict_common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:trixie-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-stable-slim
   services:
     - <<: *services-pebble
       command:
@@ -273,9 +267,9 @@ trixie-pebble:
         - "-config=/builds/adrien/acme-dns-tiny/tests/pebble-config.json"
   allow_failure: true
 
-bookworm_pebble_breaking:
+debian-oldstable_pebble_breaking:
   extends: .pebble_breaking_common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-oldstable-slim
 
 ###
 ### Stage: Let's Encrypt staging
@@ -289,6 +283,6 @@ bookworm_pebble_breaking:
       tests.staging_test_acme_account_rollover
       tests.staging_test_acme_account_deactivate
 
-bookworm-le-staging:
+debian-oldstable-le-staging:
   extends: .lets_encrypt_staging_common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:bookworm-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-oldstable-slim

@@ -1,4 +1,6 @@
-FROM docker.io/debian:trixie-slim
+ARG DEBIAN_RELEASE=stable
+
+FROM docker.io/debian:${DEBIAN_RELEASE}-slim
 
 RUN <<EOF
 #!/usr/bin/env bash
@@ -9,7 +11,8 @@ IFS=$'\n\t'
 apt-get update
 
 apt-get install -y --no-install-recommends \
-  python3-minimal python3-dnspython python3-requests pylint
+  python3-minimal python3-dnspython python3-requests pylint \
+  python3-coverage pycodestyle
 
 apt-get clean
 
@@ -17,6 +20,6 @@ EOF
 
 USER 1000
 
-WORKDIR /acme_dns_tiny
+WORKDIR /app
 
 COPY --chown=${USER}:0 . .
