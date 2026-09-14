@@ -211,9 +211,9 @@ debian-testing-pebble:
   extends: .pebble_strict_common
   image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-testing-slim
 
-debian-oldstable-pebble:
+debian-stable-pebble:
   extends: .pebble_strict_common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-oldstable-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-stable-slim
   services:
     - <<: *services-pebble
       command:
@@ -241,9 +241,9 @@ debian-oldstable-pebble:
     paths:
       - htmlcov
 
-debian-stable-pebble:
+debian-oldstable-pebble:
   extends: .pebble_strict_common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-stable-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-oldstable-slim
   services:
     - <<: *services-pebble
       command:
@@ -267,9 +267,9 @@ debian-stable-pebble:
         - "-config=/builds/adrien/acme-dns-tiny/tests/pebble-config.json"
   allow_failure: true
 
-debian-oldstable_pebble_breaking:
+debian-stable_pebble_breaking:
   extends: .pebble_breaking_common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-oldstable-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-stable-slim
 
 ###
 ### Stage: Let's Encrypt staging
@@ -283,6 +283,6 @@ debian-oldstable_pebble_breaking:
       tests.staging_test_acme_account_rollover
       tests.staging_test_acme_account_deactivate
 
-debian-oldstable-le-staging:
+debian-stable-le-staging:
   extends: .lets_encrypt_staging_common
-  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-oldstable-slim
+  image: ${CONTAINER_REGISTRY}/acme-dns-tiny:debian-stable-slim
