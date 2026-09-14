@@ -263,8 +263,8 @@ debian-oldstable-pebble:
   services:
     - <<: *services-pebble
       command:
-        - "-strict=true"
-        - "-config=/builds/adrien/acme-dns-tiny/tests/pebble-config.json"
+        - -strict=true
+        - -config=/builds/adrien/acme-dns-tiny/tests/pebble-config-14000.json
   allow_failure: true
 
 debian-stable_pebble_breaking:
