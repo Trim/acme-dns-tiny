@@ -4,6 +4,8 @@
 import argparse, base64, binascii, configparser, copy, hashlib, json, logging
 import re, sys, subprocess, time
 import requests
+from urllib3 import HTTPResponse
+from urllib3.util import Retry
 import dns.exception, dns.query, dns.name, dns.rcode, dns.resolver, dns.rrset
 import dns.tsigkeyring, dns.update
 
@@ -332,16 +334,15 @@ def get_crt(config, log=LOGGER):
         if http_response.status_code != 200:
             raise ValueError(f"Error triggering challenge: {http_response.status_code} {result}")
         try:
-            while True:
+            retry = Retry(total=8, backoff_factor=1)
+            while not retry.is_exhausted():
                 http_response, challenge_status = _send_signed_request(challenge["url"], "")
                 if http_response.status_code != 200:
                     raise ValueError("Error during challenge validation: "
                                      f"{http_response.status_code} {challenge_status}")
                 if challenge_status["status"] in ["pending", "processing"]:
-                    try:
-                        time.sleep(float(http_response.headers["Retry-After"]))
-                    except (OverflowError, ValueError, TypeError):
-                        time.sleep(2)
+                    retry.sleep(HTTPResponse(headers=http_response.headers))
+                    retry = retry.increment()
                 elif challenge_status["status"] == "valid":
                     log.info("ACME has verified challenge for domain: %s", domain)
                     break
@@ -351,6 +352,21 @@ def get_crt(config, log=LOGGER):
         finally:
             _update_dns(dnsrr_set, "delete", resolver)
 
+    log.info("Wait for the order to be ready: %s", order_location)
+    retry = Retry(total=8, backoff_factor=1)
+    while not retry.is_exhausted():
+        http_response, order = _send_signed_request(order_location, "")
+
+        if order["status"] == "pending":
+            retry.sleep(HTTPResponse(headers=http_response.headers))
+        elif order["status"] == "ready":
+            log.info("Order is ready to be finalized")
+            break
+        retry = retry.increment()
+
+    if order["status"] != "ready":
+        raise ValueError(f"Stopped waiting order to pass to ready state: {order}")
+
     log.info("Request to finalize the order (all challenges have been completed)")
     csr_der = _base64(_openssl("req", ["-in", config["acmednstiny"]["CSRFile"],
                                        "-outform", "DER"]))
@@ -358,14 +374,13 @@ def get_crt(config, log=LOGGER):
     if http_response.status_code != 200:
         raise ValueError(f"Error while sending the CSR: {http_response.status_code} {result}")
 
-    while True:
+    retry = Retry(total=8, backoff_factor=1)
+    while not retry.is_exhausted():
         http_response, order = _send_signed_request(order_location, "")
 
         if order["status"] == "processing":
-            try:
-                time.sleep(float(http_response.headers["Retry-After"]))
-            except (OverflowError, ValueError, TypeError):
-                time.sleep(2)
+            retry.sleep(HTTPResponse(headers=http_response.headers))
+            retry = retry.increment()
         elif order["status"] == "valid":
             log.info("Order finalized!")
             break
